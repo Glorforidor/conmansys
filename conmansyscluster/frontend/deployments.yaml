@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: conmansys-deployment
+    namespace: conmansys
+spec:
+    selector:
+        matchLabels:
+            app: conmansys
+    template:
+        metadata:
+            labels:
+                app: conmansys
+        spec:
+            containers:
+                - image: conmansys
+                  name: conmansys
+                  imagePullPolicy: Never
+                  env:
+                      - name: POSTGRES_HOST
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_host
+                  ports:
+                      - name: conmansys
+                        containerPort: 8080
+                

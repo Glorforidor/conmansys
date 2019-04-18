@@ -1,0 +1,46 @@
+version: "3.7"
+services:
+    conmansys:
+        build: .
+        image: conmansys:latest
+        depends_on:
+            - postgres-service
+        networks:
+            conmansys_network:
+                ipv4_address: 172.18.0.2
+    postgres-service:
+        container_name: postydb
+        image: postgres:latest
+        networks:
+            conmansys_network:
+                ipv4_address: 172.18.0.3
+        environment:
+            POSTGRES_PASSWORD: secret
+        volumes:
+            - type: volume
+              source: db-data
+              target: /var/lib/postgresql/data
+    pgadmin4:
+        container_name: postyadmin
+        image: dpage/pgadmin4:latest
+        depends_on:
+            - postgres-service
+        networks:
+            conmansys_network:
+                ipv4_address: 172.18.0.4
+        ports:
+            - target: 80
+              published: 32768
+              protocol: tcp
+        environment:
+            PGADMIN_DEFAULT_EMAIL: pejak1990@gmail.com
+            PGADMIN_DEFAULT_PASSWORD: secret
+networks:
+    conmansys_network:
+        name: conmansys_network
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.18.0.0/24
+volumes:
+    db-data:

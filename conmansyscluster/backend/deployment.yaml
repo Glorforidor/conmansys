@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: postgres-deployment
+    namespace: conmansys
+    labels:
+        backend: postgres
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            backend: postgres
+    template:
+        metadata:
+            labels:
+                backend: postgres
+        spec:
+            containers:
+                - image: postgres
+                  name: postgres
+                  imagePullPolicy: Always
+                  env:
+                      - name: POSTGRES_USER
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_user
+                      - name: POSTGRES_PASSWORD
+                        valueFrom:
+                            configMapKeyRef: 
+                                name: conmansys-config 
+                                key: postgres_password
+                  ports:
+                      - name: postgres
+                        containerPort: 5432
+                  volumeMounts:
+                      - name: postgres-storage
+                        mountPath: /var/lib/postgresql/data
+                - image: dpage/pgadmin4
+                  name: pgadmin
+                  imagePullPolicy: Always
+                  env:
+                      - name: PGADMIN_DEFAULT_EMAIL
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: pgadmin_default_email
+                      - name: PGADMIN_DEFAULT_PASSWORD
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: pgadmin_default_password
+                  ports:
+                      - name: pgadmin-port
+                        containerPort: 80
+            volumes:
+                - name: postgres-storage
+                  persistentVolumeClaim:
+                      claimName: postgres-pv-claim

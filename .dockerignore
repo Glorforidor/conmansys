@@ -1,0 +1,11 @@
+*.go
+*.md
+*.pdf
+*.sh
+*.swp
+*.tex
+*.yaml
+.git
+Makefile
+README
+role_assignment
