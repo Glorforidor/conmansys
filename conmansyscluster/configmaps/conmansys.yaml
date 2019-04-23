@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: conmansys-config
+    namespace: conmansys
+data:
+    postgres_user: postgres
+    postgres_host: postgres-service
+    pgadmin_default_email: pejak1990@gmail.com

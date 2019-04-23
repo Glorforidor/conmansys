@@ -27,8 +27,8 @@ spec:
                                 key: postgres_user
                       - name: POSTGRES_PASSWORD
                         valueFrom:
-                            configMapKeyRef: 
-                                name: conmansys-config 
+                            secretKeyRef:
+                                name: conmansys-secret
                                 key: postgres_password
                   ports:
                       - name: postgres
@@ -47,8 +47,8 @@ spec:
                                 key: pgadmin_default_email
                       - name: PGADMIN_DEFAULT_PASSWORD
                         valueFrom:
-                            configMapKeyRef:
-                                name: conmansys-config
+                            secretKeyRef:
+                                name: conmansys-secret
                                 key: pgadmin_default_password
                   ports:
                       - name: pgadmin-port
