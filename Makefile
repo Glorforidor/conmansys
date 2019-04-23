@@ -28,7 +28,6 @@ aks_mc_resource_group := MC_CONMANSYS_CONMANSYSCLUSTER_NORTHEUROPE
 acr_name := conmansys
 
 all:
-	CGO_ENABLED=0 go build
 	docker build -t conmansys .
 
 azgroup:

@@ -1,9 +1,6 @@
-*.go
 *.md
-*.pdf
 *.sh
 *.swp
-*.tex
 *.yaml
 .git
 Makefile
