@@ -5,14 +5,27 @@ metadata:
     namespace: conmansys
 spec:
     selector:
-        backend: postgres
+        app: postgres
+        tier: backend
+    type: NodePort
+    ports:
+        - name: postgres
+          protocol: TCP
+          port: 5432
+          targetPort: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: pgadmin-service
+    namespace: conmansys
+spec:
+    selector:
+        app: pgadmin
+        tier: backend
     type: NodePort
     ports:
         - name: pgadmin
           protocol: TCP
           port: 80
           targetPort: pgadmin-port
-        - name: postgres
-          protocol: TCP
-          port: 5432
-          targetPort: postgres
