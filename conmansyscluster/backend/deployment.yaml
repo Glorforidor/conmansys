@@ -4,16 +4,17 @@ metadata:
     name: postgres-deployment
     namespace: conmansys
     labels:
-        backend: postgres
+        app: postgres
+        tier: backend
 spec:
-    replicas: 1
     selector:
         matchLabels:
-            backend: postgres
+            app: postgres
     template:
         metadata:
             labels:
-                backend: postgres
+                app: postgres
+                tier: backend
         spec:
             containers:
                 - image: postgres
@@ -36,6 +37,30 @@ spec:
                   volumeMounts:
                       - name: postgres-storage
                         mountPath: /var/lib/postgresql/data
+            volumes:
+                - name: postgres-storage
+                  persistentVolumeClaim:
+                      claimName: postgres-pv-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: pgadmin-deployment
+    namespace: conmansys
+    labels:
+        app: pgadmin
+        tier: backend
+spec:
+    selector:
+        matchLabels:
+            app: pgadmin
+    template:
+        metadata:
+            labels:
+                app: pgadmin
+                tier: backend
+        spec:
+            containers:
                 - image: dpage/pgadmin4
                   name: pgadmin
                   imagePullPolicy: Always
@@ -53,7 +78,3 @@ spec:
                   ports:
                       - name: pgadmin-port
                         containerPort: 80
-            volumes:
-                - name: postgres-storage
-                  persistentVolumeClaim:
-                      claimName: postgres-pv-claim
