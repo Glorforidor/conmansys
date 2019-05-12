@@ -1,13 +1,19 @@
 version: "3.7"
 services:
-    conmansys:
-        build: .
-        image: conmansys:latest
+    confservice:
+        build: ./confservice/
+        image: confservice:latest
         depends_on:
             - postgres-service
         networks:
             conmansys_network:
                 ipv4_address: 172.18.0.2
+        environment:
+            DBHOST: postgres-service
+            DBPORT: 5432
+            DBUSER: postgres
+            DBPASS: secret
+            DBNAME: conmansys
     postgres-service:
         container_name: postydb
         image: postgres:latest
@@ -30,7 +36,7 @@ services:
                 ipv4_address: 172.18.0.4
         ports:
             - target: 80
-              published: 32768
+              published: 65535
               protocol: tcp
         environment:
             PGADMIN_DEFAULT_EMAIL: pejak1990@gmail.com
