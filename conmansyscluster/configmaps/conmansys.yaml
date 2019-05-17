@@ -6,4 +6,6 @@ metadata:
 data:
     postgres_user: postgres
     postgres_host: postgres-service
+    postgres_port: "5432"
+    postgres_name: conmansys
     pgadmin_default_email: pejak1990@gmail.com
