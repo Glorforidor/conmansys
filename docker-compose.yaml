@@ -14,6 +14,10 @@ services:
             DBUSER: postgres
             DBPASS: secret
             DBNAME: conmansys
+        ports:
+            - target: 8080
+              published: 8080
+              protocol: tcp
     postgres-service:
         container_name: postydb
         image: postgres:latest
