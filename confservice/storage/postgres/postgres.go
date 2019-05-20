@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	// load postgres driver
+	_ "github.com/lib/pq"
+
 	"github.com/Glorforidor/conmansys/confservice/storage"
 )
 
@@ -45,6 +48,9 @@ func (p *postgres) GetItem(id int64) (*storage.Item, error) {
 		&i.Type, &i.Version,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("could not get item with id %v: %v", id, err)
 	}
 
@@ -78,6 +84,9 @@ func (p *postgres) GetItems() ([]*storage.Item, error) {
 	return is, nil
 }
 
+// CreateItem inserts a new row into the postgres database and return the id of
+// the new created row. If an error occurs the returned id is 0 and an error
+// description.
 func (p *postgres) CreateItem(value, iType, version string) (int64, error) {
 	q := `INSERT INTO conf_item
 	(conf_item_value, conf_item_type, conf_item_version)

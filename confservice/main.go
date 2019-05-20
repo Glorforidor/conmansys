@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
-	"reflect"
-	"strings"
+	"time"
 
-	"github.com/Glorforidor/conmansys/confservice/storage"
+	"github.com/Glorforidor/conmansys/confservice/handler"
 	"github.com/Glorforidor/conmansys/confservice/storage/postgres"
 )
 
@@ -30,9 +30,20 @@ func main() {
 	}
 	defer p.Close()
 
-	// testItem(p)
-	// testModule(p)
-	testItemModule(p)
+	r := handler.New(p)
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+		// lets make sure we timeout
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+	}
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func dbConfig() map[string]string {
@@ -70,103 +81,4 @@ func dbConfig() map[string]string {
 	conf[dbname] = name
 
 	return conf
-}
-
-func testItem(p storage.Service) {
-	// items
-	it, err := p.GetItem(1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(it)
-
-	it, err = p.GetItem(2)
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(it)
-
-	ii, err := p.GetItems()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, i := range ii {
-		print(i)
-	}
-
-	i, err := p.CreateItem("pension_calculator", "window", "0.0.1")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	it, err = p.GetItem(i)
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(it)
-
-	p.DeleteItem(i)
-}
-
-func testModule(p storage.Service) {
-	//modules
-	m, err := p.GetItem(1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(m)
-
-	m, err = p.GetItem(2)
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(m)
-
-	mm, err := p.GetModules()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, m := range mm {
-		print(m)
-	}
-}
-
-func testItemModule(p storage.Service) {
-	it, err := p.CreateItem("test_system", "test", "0.0.1")
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(it)
-
-	m, err := p.CreateModule("test_system", "0.0.1")
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(m)
-
-	imid, err := p.CreateItemModule(it, m)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	im, err := p.GetItemModule(imid)
-	if err != nil {
-		log.Fatal(err)
-	}
-	print(im)
-
-	ims, err := p.GetItemModules()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, im := range ims {
-		print(im)
-	}
-}
-
-func print(i interface{}) {
-	log.Println(strings.Repeat("-", 20))
-	log.Println(reflect.TypeOf(i))
-	log.Printf("%+v\n", i)
-	log.Println(strings.Repeat("-", 20))
 }

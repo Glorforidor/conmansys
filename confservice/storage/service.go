@@ -1,10 +1,5 @@
 package storage
 
-import (
-	// load the postgres driver
-	_ "github.com/lib/pq"
-)
-
 type ItemService interface {
 	GetItem(id int64) (*Item, error)
 	GetItems() ([]*Item, error)
@@ -34,20 +29,20 @@ type Service interface {
 }
 
 type Item struct {
-	ID      int64
-	Value   string
-	Type    string
-	Version string
+	ID      int64  `json:"id"`
+	Value   string `json:"value"`
+	Type    string `json:"type"`
+	Version string `json:"version"`
 }
 
 type Module struct {
-	ID      int64
-	Value   string
-	Version string
+	ID      int64  `json:"id"`
+	Value   string `json:"value"`
+	Version string `json:"version"`
 }
 
 type ItemModule struct {
-	ID       int64
-	ItemID   int64
-	ModuleID int64
+	ID       int64 `json:"id"`
+	ItemID   int64 `json:"item_id"`
+	ModuleID int64 `json:"module_id"`
 }
