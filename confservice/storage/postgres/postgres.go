@@ -12,6 +12,8 @@ import (
 
 type postgres struct{ db *sql.DB }
 
+// New return new initialised storage.Service. If there is an error it will be a
+// connection error.
 func New(host, port, user, pass, dbname string) (storage.Service, error) {
 	connStr := fmt.Sprintf(
 		"host=%v port=%v user=%v password=%v dbname=%v sslmode=disable",
@@ -38,6 +40,8 @@ func New(host, port, user, pass, dbname string) (storage.Service, error) {
 // TODO: make everything prepared. This is good practice though the driver might
 // make everything prepared behind the curtain.
 
+// GetItem finds the item with the given id in the database and returns it. If
+// an error occurs it returns nil and the error.
 func (p *postgres) GetItem(id int64) (*storage.Item, error) {
 	q := "SELECT * FROM conf_item WHERE conf_item_id = $1"
 
@@ -57,6 +61,8 @@ func (p *postgres) GetItem(id int64) (*storage.Item, error) {
 	return i, nil
 }
 
+// GetItems finds every item in the database and returns a slice of items. If an
+// error occurs it returns nil slice and the error.
 func (p *postgres) GetItems() ([]*storage.Item, error) {
 	q := "SELECT * FROM conf_item"
 
@@ -84,40 +90,42 @@ func (p *postgres) GetItems() ([]*storage.Item, error) {
 	return is, nil
 }
 
-// CreateItem inserts a new row into the postgres database and return the id of
-// the new created row. If an error occurs the returned id is 0 and an error
-// description.
+// TODO: maybe add Stringer to structs so createtype takes a stringer instead of
+// string so input is more reliable?
+
+func create(db *sql.DB, query string, createType string, args ...interface{}) (int64, error) {
+	i := int64(0)
+	err := db.QueryRow(query, args...).Scan(&i)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// should properly not happend
+			return 0, nil
+		}
+
+		return 0, fmt.Errorf("could not create %v: %v", createType, err)
+	}
+
+	return i, nil
+}
+
+// CreateItem inserts a new row into the database and return the id of the new
+// created row. If an error occurs the returned id is 0 and the insertion error.
 func (p *postgres) CreateItem(value, iType, version string) (int64, error) {
 	q := `INSERT INTO conf_item
 	(conf_item_value, conf_item_type, conf_item_version)
 	VALUES ($1, $2, $3) RETURNING conf_item_id`
 
-	// pq does not support LastInsertID. It is specified in the doc to use the
-	// Query/QueryRow with the Postgres feauture of RETURNING.
-	itemID := int64(0)
-	err := p.db.QueryRow(q, value, iType, version).Scan(&itemID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// this should properly not happend, unless postgres RETURNING
-			// fails?
-			return 0, nil
-		}
-
-		return 0, fmt.Errorf("could not insert data: %v", err)
-	}
-
-	return itemID, nil
+	return create(p.db, q, "Item", value, iType, version)
 }
 
-func (p *postgres) DeleteItem(id int64) (int64, error) {
-	q := "DELETE FROM conf_item WHERE conf_item_id = $1"
-
-	rs, err := p.db.Exec(q, id)
+func delete(db *sql.DB, query string, deleteType string, args ...interface{}) (int64, error) {
+	rs, err := db.Exec(query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("could not delete item: %v", err)
+		return 0, fmt.Errorf("could not delete %v: %v", deleteType, err)
 	}
 
 	count, err := rs.RowsAffected()
+	// TODO: should this be an error if no rows were affected?
 	if err != nil {
 		return 0, fmt.Errorf("no rows were affected: %v", err)
 	}
@@ -125,6 +133,16 @@ func (p *postgres) DeleteItem(id int64) (int64, error) {
 	return count, nil
 }
 
+// DeleteItem deletes the item with the given id in the database. It returns the
+// affected rows. If no rows were affected it is considered as an error.
+func (p *postgres) DeleteItem(id int64) (int64, error) {
+	q := "DELETE FROM conf_item WHERE conf_item_id = $1"
+
+	return delete(p.db, q, "Item", id)
+}
+
+// GetModule finds the module with the given id in the database and returns it.
+// If an error occurs it returns nil and the error.
 func (p *postgres) GetModule(id int64) (*storage.Module, error) {
 	q := "SELECT * FROM conf_module WHERE conf_module_id = $1"
 
@@ -142,6 +160,8 @@ func (p *postgres) GetModule(id int64) (*storage.Module, error) {
 	return m, nil
 }
 
+// GetModules find modules in the database and returns slice of modules. If an
+// error occurs it return nil slice and the error.
 func (p *postgres) GetModules() ([]*storage.Module, error) {
 	q := "SELECT * FROM conf_module"
 
@@ -169,24 +189,18 @@ func (p *postgres) GetModules() ([]*storage.Module, error) {
 	return ms, nil
 }
 
+// CreateModule inserts a module with the given values into the database and
+// returns the newly inserted modules id. If an error occurs the id will be 0
+// and the caused error.
 func (p *postgres) CreateModule(value, version string) (int64, error) {
 	q := `INSERT INTO conf_module (conf_module_value, conf_module_version)
 	VALUES ($1, $2) RETURNING conf_module_id`
 
-	moduleID := int64(0)
-	err := p.db.QueryRow(q, value, version).Scan(&moduleID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// should properly not happend
-			return 0, nil
-		}
-
-		return 0, fmt.Errorf("could not create module: %v", err)
-	}
-
-	return moduleID, nil
+	return create(p.db, q, "Module", value, version)
 }
 
+// DeleteModule deletes the module with the given id in the database and returns
+// the rows affected. If 0 rows are affected it is treated as an error.
 func (p *postgres) DeleteModule(id int64) (int64, error) {
 	q := "DELETE FROM conf_module WHERE conf_module_id = $1"
 
@@ -203,6 +217,8 @@ func (p *postgres) DeleteModule(id int64) (int64, error) {
 	return count, nil
 }
 
+// GetItemModule finds the item module in the database and returns the it. If
+// an error occurs it returns nil and the error.
 func (p *postgres) GetItemModule(id int64) (*storage.ItemModule, error) {
 	q := "SELECT * FROM conf_item_module WHERE conf_item_module_id = $1"
 
@@ -220,6 +236,8 @@ func (p *postgres) GetItemModule(id int64) (*storage.ItemModule, error) {
 	return im, nil
 }
 
+// GetItemModules find the item modules in the database and returns slice of
+// item modules. If and error occurs it returns nil slice and the error.
 func (p *postgres) GetItemModules() ([]*storage.ItemModule, error) {
 	q := "SELECT * FROM conf_item_module"
 
@@ -248,26 +266,20 @@ func (p *postgres) GetItemModules() ([]*storage.ItemModule, error) {
 	return ims, nil
 }
 
+// CreateItemModule inserts a item module with the given values and returns the
+// newly inserted item module's id. If an error occurs it returns 0 and the
+// error.
 func (p *postgres) CreateItemModule(itemID, moduleID int64) (int64, error) {
 	q := `
 	INSERT INTO conf_item_module (conf_item_id, conf_module_id) 
 	VALUES ($1, $2)
 	RETURNING conf_item_module_id`
 
-	itemModuleID := int64(0)
-	err := p.db.QueryRow(q, itemID, moduleID).Scan(&itemModuleID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// should properly not happend
-			return 0, nil
-		}
-
-		return 0, fmt.Errorf("could not create ItemModule: %v", err)
-	}
-
-	return itemModuleID, nil
+	return create(p.db, q, "ItemModule", itemID, moduleID)
 }
 
+// DeleteItemModule deletes the item module with the given id and returns the
+// rows affected. If 0 rows are affected it is treated as an error.
 func (p *postgres) DeleteItemModule(id int64) (int64, error) {
 	q := "DELETE FROM conf_item_module WHERE conf_item_module_id = $1"
 
