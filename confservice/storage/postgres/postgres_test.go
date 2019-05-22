@@ -58,7 +58,7 @@ func setup() {
 		panic(err)
 	}
 
-	p = pp.(*postgres)
+	p = pp
 
 	p.db.Exec("DROP DATABASE IF EXISTS conmansys")
 	p.db.Exec("CREATE DATABASE conmansys")

@@ -14,7 +14,7 @@ type postgres struct{ db *sql.DB }
 
 // New return new initialised storage.Service. If there is an error it will be a
 // connection error.
-func New(host, port, user, pass, dbname string) (storage.Service, error) {
+func New(host, port, user, pass, dbname string) (*postgres, error) {
 	connStr := fmt.Sprintf(
 		"host=%v port=%v user=%v password=%v dbname=%v sslmode=disable",
 		host, port,
