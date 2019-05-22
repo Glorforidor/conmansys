@@ -21,10 +21,21 @@ type ItemModuleService interface {
 	DeleteItemModule(id int64) (int64, error)
 }
 
+type ModuleDependencyService interface {
+	GetModuleDependencies() ([]*ModuleDependency, error)
+	GetModuleDependenciesByDependentID(dependentID int64) ([]*ModuleDependency, error)
+	GetModuleDependenciesByDependeeID(dependeeID int64) ([]*ModuleDependency, error)
+	CreateModuleDependency(dependentID, dependeeID int64) error
+	DeleteModuleDependency(dependentID, dependeeID int64) (int64, error)
+	DeleteModuleDependencyByDependentID(id int64) (int64, error)
+	DeleteModuleDependencyByDependeeID(id int64) (int64, error)
+}
+
 type Service interface {
 	ItemService
 	ModuleService
 	ItemModuleService
+	ModuleDependencyService
 	Close() error
 }
 
@@ -45,4 +56,9 @@ type ItemModule struct {
 	ID       int64 `json:"id"`
 	ItemID   int64 `json:"item_id"`
 	ModuleID int64 `json:"module_id"`
+}
+
+type ModuleDependency struct {
+	Dependent int64 `json:"dependent"`
+	Dependee  int64 `json:"dependee"`
 }

@@ -30,6 +30,28 @@ func New(service storage.Service) http.Handler {
 	r.HandleFunc("/itemmodules/{id:[0-9]+}", h.itemModule).Methods(http.MethodGet)
 	r.HandleFunc("/itemmodules", h.createItemModule).Methods(http.MethodPost)
 	r.HandleFunc("/itemmodules/{id:[0-9]+}", h.deleteItemModule).Methods(http.MethodDelete)
+	r.HandleFunc("/moduledependencies", h.moduleDependencies).Methods(http.MethodGet)
+	r.HandleFunc(
+		"/moduledependencies/dependent/{id:[0-9]+}",
+		h.moduleDependenciesByDependentID,
+	).Methods(http.MethodGet)
+	r.HandleFunc(
+		"/moduledependencies/dependee/{id:[0-9]+}",
+		h.moduleDependenciesByDependeeID,
+	).Methods(http.MethodGet)
+	r.HandleFunc("/moduledependencies", h.createModuleDependency).Methods(http.MethodPost)
+	r.HandleFunc(
+		"/moduledependencies/dependent/{dependentID:[0-9]+}/dependee/{dependeeID:[0-9]+}",
+		h.deleteModuleDependency,
+	).Methods(http.MethodDelete)
+	r.HandleFunc(
+		"/moduledependencies/dependent/{id:[0-9]+}",
+		h.deleteModuleDependencyByDependentID,
+	).Methods(http.MethodDelete)
+	r.HandleFunc(
+		"/moduledependencies/dependee/{id:[0-9]+}",
+		h.deleteModuleDependencyByDependeeID,
+	).Methods(http.MethodDelete)
 
 	return r
 }
@@ -211,7 +233,7 @@ func (h handler) createModule(w http.ResponseWriter, r *http.Request) {
 
 func (h handler) deleteModule(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id := params["id"]
+	id := strings.TrimSpace(params["id"])
 	if id == "" {
 		http.Error(w, "missing value", http.StatusBadRequest)
 		return
@@ -236,7 +258,7 @@ func (h handler) deleteModule(w http.ResponseWriter, r *http.Request) {
 
 func (h handler) itemModule(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id := params["id"]
+	id := strings.TrimSpace(params["id"])
 	if id == "" {
 		http.Error(w, "missing value", http.StatusBadRequest)
 		return
@@ -299,7 +321,7 @@ func (h handler) createItemModule(w http.ResponseWriter, r *http.Request) {
 
 func (h handler) deleteItemModule(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id := params["id"]
+	id := strings.TrimSpace(params["id"])
 	if id == "" {
 		http.Error(w, "missing value", http.StatusBadRequest)
 		return
@@ -320,4 +342,177 @@ func (h handler) deleteItemModule(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", ContentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": row})
+}
+
+func (h handler) moduleDependencies(w http.ResponseWriter, r *http.Request) {
+	moddeps, err := h.storage.GetModuleDependencies()
+	if err != nil {
+		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	w.Header().Set("Content-Type", ContentType["json"])
+	json.NewEncoder(w).Encode(moddeps)
+}
+
+func (h handler) moduleDependenciesByDependentID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id := strings.TrimSpace(params["id"])
+	if id == "" {
+		http.Error(w, "missing value", http.StatusBadRequest)
+		return
+	}
+
+	i, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		http.Error(w, "not a number", http.StatusBadRequest)
+		return
+	}
+
+	moddeps, err := h.storage.GetModuleDependenciesByDependentID(i)
+	if err != nil {
+		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	w.Header().Set("Content-Type", ContentType["json"])
+	json.NewEncoder(w).Encode(moddeps)
+}
+
+func (h handler) moduleDependenciesByDependeeID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id := strings.TrimSpace(params["id"])
+	if id == "" {
+		http.Error(w, "missing value", http.StatusBadRequest)
+		return
+	}
+
+	i, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		http.Error(w, "not a number", http.StatusBadRequest)
+		return
+	}
+
+	moddeps, err := h.storage.GetModuleDependenciesByDependeeID(i)
+	if err != nil {
+		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	w.Header().Set("Content-Type", ContentType["json"])
+	json.NewEncoder(w).Encode(moddeps)
+}
+
+func (h handler) createModuleDependency(w http.ResponseWriter, r *http.Request) {
+	md := &storage.ModuleDependency{}
+	err := json.NewDecoder(r.Body).Decode(md)
+	if err != nil {
+		http.Error(w, "wrong input format", http.StatusBadRequest)
+		return
+	}
+
+	if md.Dependent == 0 || md.Dependee == 0 {
+		http.Error(w, "missing values", http.StatusBadRequest)
+		return
+	}
+
+	err = h.storage.CreateModuleDependency(md.Dependent, md.Dependee)
+	if err != nil {
+		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentType["json"])
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(md)
+}
+
+func (h handler) deleteModuleDependency(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	dependentID := strings.TrimSpace(params["dependentID"])
+	dependeeID := strings.TrimSpace(params["dependeeID"])
+	// routing should prevent this, but might as well guard it
+	if dependentID == "" || dependeeID == "" {
+		http.Error(w, "missing value", http.StatusBadRequest)
+		return
+	}
+
+	i, err := strconv.ParseInt(dependentID, 10, 64)
+	// routing should prevent this, but might as well guard it
+	if err != nil {
+		http.Error(w, "not a number", http.StatusBadRequest)
+		return
+	}
+
+	j, err := strconv.ParseInt(dependeeID, 10, 64)
+	// routing should prevent this, but might as well guard it
+	if err != nil {
+		http.Error(w, "not a number", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := h.storage.DeleteModuleDependency(i, j)
+	if err != nil {
+		http.Error(w, "could not delete item", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentType["json"])
+	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
+}
+
+func (h handler) deleteModuleDependencyByDependentID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id := strings.TrimSpace(params["id"])
+	// routing should prevent this, but might as well guard it
+	if id == "" {
+		http.Error(w, "missing value", http.StatusBadRequest)
+		return
+	}
+
+	i, err := strconv.ParseInt(id, 10, 64)
+	// routing should prevent this, but might as well guard it
+	if err != nil {
+		http.Error(w, "not a number", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := h.storage.DeleteModuleDependencyByDependentID(i)
+	if err != nil {
+		http.Error(w, "could not delete item", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentType["json"])
+	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
+}
+
+func (h handler) deleteModuleDependencyByDependeeID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id := strings.TrimSpace(params["id"])
+	// routing should prevent this, but might as well guard it
+	if id == "" {
+		http.Error(w, "missing value", http.StatusBadRequest)
+		return
+	}
+
+	i, err := strconv.ParseInt(id, 10, 64)
+	// routing should prevent this, but might as well guard it
+	if err != nil {
+		http.Error(w, "not a number", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := h.storage.DeleteModuleDependencyByDependeeID(i)
+	if err != nil {
+		http.Error(w, "could not delete item", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentType["json"])
+	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
 }

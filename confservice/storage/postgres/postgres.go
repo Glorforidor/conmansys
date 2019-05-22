@@ -167,7 +167,7 @@ func (p *postgres) GetModules() ([]*storage.Module, error) {
 
 	rows, err := p.db.Query(q)
 	if err != nil {
-		return nil, fmt.Errorf("could not execute q: %v", err)
+		return nil, fmt.Errorf("could not execute query: %v", err)
 	}
 	defer rows.Close()
 
@@ -297,7 +297,7 @@ func (p *postgres) DeleteItemModule(id int64) (int64, error) {
 }
 
 func modDep(db *sql.DB, query string, args ...interface{}) ([]*storage.ModuleDependency, error) {
-	rows, err := db.Query(query, args)
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("could not execute query: %v", err)
 	}
@@ -306,7 +306,7 @@ func modDep(db *sql.DB, query string, args ...interface{}) ([]*storage.ModuleDep
 	mds := make([]*storage.ModuleDependency, 0)
 	for rows.Next() {
 		md := &storage.ModuleDependency{}
-		err := rows.Scan(&md.ID, &md.Dependent, &md.Dependee)
+		err := rows.Scan(&md.Dependent, &md.Dependee)
 		if err != nil {
 			return nil, fmt.Errorf("could not get module dependencies: %v", err)
 		}
@@ -319,6 +319,12 @@ func modDep(db *sql.DB, query string, args ...interface{}) ([]*storage.ModuleDep
 	}
 
 	return mds, nil
+}
+
+func (p *postgres) GetModuleDependencies() ([]*storage.ModuleDependency, error) {
+	q := "SELECT * FROM conf_module_dependency"
+
+	return modDep(p.db, q)
 }
 
 // GetModuleDependenciesByDependentID finds module dependency by dependent id
@@ -342,11 +348,20 @@ func (p *postgres) GetModuleDependenciesByDependeeID(dependeeID int64) ([]*stora
 // CreateModuleDependency inserts a module dependency with given dependent and
 // dependee id. If an error occurs it could not create the module dependency.
 func (p *postgres) CreateModuleDependency(dependentID int64, dependeeID int64) error {
-	q := "INSERT INTO conf_module_dependecy VALUES ($1, $2)"
+	q := "INSERT INTO conf_module_dependency VALUES ($1, $2)"
 
 	_, err := create(p.db, q, "ModuleDependency", dependentID, dependeeID)
 
 	return err
+}
+
+// DeleteModuleDependency deletes the module dependency with the given dependent
+// and dependee id and returns rows affected. If 0 rows were affected it is
+// treated as an error.
+func (p *postgres) DeleteModuleDependency(dependentID, dependeeID int64) (int64, error) {
+	q := "DELETE FROM conf_module_dependency WHERE dependent = $1 AND dependee = $2"
+
+	return delete(p.db, q, "ModuleDependency", dependentID, dependeeID)
 }
 
 // DeleteModuleDependencyByDependentID deletes the module dependency with the
