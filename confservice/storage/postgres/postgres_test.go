@@ -47,11 +47,11 @@ CREATE TABLE conf_item_module(
 
 // there must be a better way?
 func setup() {
-	host := "172.17.0.2"
+	host := "172.19.0.2"
 	port := "5432"
 	user := "postgres"
 	pass := "secret"
-	dbname := "conmansys"
+	dbname := "postgres"
 
 	pp, err := New(host, port, user, pass, dbname)
 	if err != nil {
@@ -59,9 +59,6 @@ func setup() {
 	}
 
 	p = pp
-
-	p.db.Exec("DROP DATABASE IF EXISTS conmansys")
-	p.db.Exec("CREATE DATABASE conmansys")
 
 	_, err = p.db.Exec(dataschema)
 	if err != nil {
@@ -85,18 +82,18 @@ func TestNew(t *testing.T) {
 		err    bool
 	}{
 		"good connection": {
-			host:   "172.17.0.2", // important a test database is running
+			host:   "172.19.0.2", // important a test database is running
 			port:   "5432",
 			user:   "postgres",
 			pass:   "secret",
-			dbname: "conmansys",
+			dbname: "postgres", // connect to default database
 		},
 		"bad connection": {
-			host:   "172.17.0.2",
+			host:   "172.19.0.2",
 			port:   "5000",
 			user:   "postgres",
 			pass:   "secret",
-			dbname: "conmansys",
+			dbname: "testtest", // database does not exists
 			err:    true,
 		},
 	}
