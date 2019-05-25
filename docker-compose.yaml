@@ -18,12 +18,30 @@ services:
             - target: 8080
               published: 8080
               protocol: tcp
+    insservice:
+        build: ./insservice/
+        image: insservice:latest
+        depends_on:
+            - postgres-service
+        networks:
+            conmansys_network:
+                ipv4_address: 172.18.0.3
+        environment:
+            DBHOST: postgres-service
+            DBPORT: 5432
+            DBUSER: postgres
+            DBPASS: secret
+            DBNAME: conmansys
+        ports:
+            - target: 8081
+              published: 8081
+              protocol: tcp
     postgres-service:
         container_name: postydb
         image: postgres:latest
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.3
+                ipv4_address: 172.18.0.4
         environment:
             POSTGRES_PASSWORD: secret
         volumes:
@@ -37,7 +55,7 @@ services:
             - postgres-service
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.4
+                ipv4_address: 172.18.0.5
         ports:
             - target: 80
               published: 65535
@@ -45,6 +63,15 @@ services:
         environment:
             PGADMIN_DEFAULT_EMAIL: pejak1990@gmail.com
             PGADMIN_DEFAULT_PASSWORD: secret
+    testdb:
+        container_name: testdb
+        image: postgres:latest
+        environment:
+            POSTGRES_PASSWORD: secret
+        networks:
+            testdb_network:
+                ipv4_address: 172.19.0.2
+
 networks:
     conmansys_network:
         name: conmansys_network
@@ -52,5 +79,11 @@ networks:
         ipam:
             config:
                 - subnet: 172.18.0.0/24
+    testdb_network:
+        name: testdb_network
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.19.0.0/24
 volumes:
     db-data:
