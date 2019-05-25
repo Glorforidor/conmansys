@@ -36,7 +36,6 @@ type Service interface {
 	ModuleService
 	ItemModuleService
 	ModuleDependencyService
-	Close() error
 }
 
 type Item struct {

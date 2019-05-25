@@ -176,9 +176,8 @@ func (d *dbmock) DeleteModuleDependencyByDependeeID(id int64) (int64, error) {
 	return 1, nil
 }
 
-func (d *dbmock) Close() error {
+func (d *dbmock) Close() {
 	d.closed = true
-	return nil
 }
 
 var (
