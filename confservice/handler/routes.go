@@ -11,6 +11,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type handler struct {
+	storage storage.Service
+}
+
 // New registers multiple endpoints, assoiciate the storage.Service to the
 // handler for data creation and retrieval and returns the handler.
 func New(service storage.Service) http.Handler {
@@ -54,10 +58,6 @@ func New(service storage.Service) http.Handler {
 	).Methods(http.MethodDelete)
 
 	return r
-}
-
-type handler struct {
-	storage storage.Service
 }
 
 var (

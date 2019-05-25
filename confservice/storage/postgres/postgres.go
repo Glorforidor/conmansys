@@ -45,7 +45,7 @@ func New(host, port, user, pass, dbname string) (*postgres, error) {
 func (p *postgres) GetItem(id int64) (*storage.Item, error) {
 	q := "SELECT * FROM conf_item WHERE conf_item_id = $1"
 
-	i := &storage.Item{}
+	var i storage.Item
 
 	err := p.db.QueryRow(q, id).Scan(
 		&i.ID, &i.Value,
@@ -58,7 +58,7 @@ func (p *postgres) GetItem(id int64) (*storage.Item, error) {
 		return nil, fmt.Errorf("could not get item with id %v: %v", id, err)
 	}
 
-	return i, nil
+	return &i, nil
 }
 
 // GetItems finds every item in the database and returns a slice of items. If an
@@ -72,15 +72,15 @@ func (p *postgres) GetItems() ([]*storage.Item, error) {
 	}
 	defer rows.Close()
 
-	is := make([]*storage.Item, 0)
+	var is []*storage.Item
 
 	for rows.Next() {
-		i := &storage.Item{}
+		var i storage.Item
 		err := rows.Scan(&i.ID, &i.Value, &i.Type, &i.Version)
 		if err != nil {
 			return nil, fmt.Errorf("could not scan row: %v", err)
 		}
-		is = append(is, i)
+		is = append(is, &i)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -94,7 +94,7 @@ func (p *postgres) GetItems() ([]*storage.Item, error) {
 // string so input is more reliable?
 
 func create(db *sql.DB, query string, createType string, args ...interface{}) (int64, error) {
-	i := int64(0)
+	var i int64
 	err := db.QueryRow(query, args...).Scan(&i)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -146,7 +146,7 @@ func (p *postgres) DeleteItem(id int64) (int64, error) {
 func (p *postgres) GetModule(id int64) (*storage.Module, error) {
 	q := "SELECT * FROM conf_module WHERE conf_module_id = $1"
 
-	m := &storage.Module{}
+	var m storage.Module
 
 	err := p.db.QueryRow(q, id).Scan(&m.ID, &m.Value, &m.Version)
 	if err != nil {
@@ -157,7 +157,7 @@ func (p *postgres) GetModule(id int64) (*storage.Module, error) {
 		return nil, fmt.Errorf("could not get module with id %v: %v", id, err)
 	}
 
-	return m, nil
+	return &m, nil
 }
 
 // GetModules find modules in the database and returns slice of modules. If an
@@ -171,15 +171,15 @@ func (p *postgres) GetModules() ([]*storage.Module, error) {
 	}
 	defer rows.Close()
 
-	ms := make([]*storage.Module, 0)
+	var ms []*storage.Module
 
 	for rows.Next() {
-		m := &storage.Module{}
+		var m storage.Module
 		err := rows.Scan(&m.ID, &m.Value, &m.Version)
 		if err != nil {
 			return nil, fmt.Errorf("could not scan row: %v", err)
 		}
-		ms = append(ms, m)
+		ms = append(ms, &m)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -222,7 +222,7 @@ func (p *postgres) DeleteModule(id int64) (int64, error) {
 func (p *postgres) GetItemModule(id int64) (*storage.ItemModule, error) {
 	q := "SELECT * FROM conf_item_module WHERE conf_item_module_id = $1"
 
-	im := &storage.ItemModule{}
+	var im storage.ItemModule
 
 	err := p.db.QueryRow(q, id).Scan(&im.ID, &im.ItemID, &im.ModuleID)
 	if err != nil {
@@ -233,7 +233,7 @@ func (p *postgres) GetItemModule(id int64) (*storage.ItemModule, error) {
 		return nil, fmt.Errorf("could not get itemModule with id %v: %v", id, err)
 	}
 
-	return im, nil
+	return &im, nil
 }
 
 // GetItemModules find the item modules in the database and returns slice of
@@ -247,16 +247,16 @@ func (p *postgres) GetItemModules() ([]*storage.ItemModule, error) {
 	}
 	defer rows.Close()
 
-	ims := make([]*storage.ItemModule, 0)
+	var ims []*storage.ItemModule
 
 	for rows.Next() {
-		im := &storage.ItemModule{}
+		var im storage.ItemModule
 		err := rows.Scan(&im.ID, &im.ItemID, &im.ModuleID)
 		if err != nil {
 			return nil, fmt.Errorf("could not get itemModules: %v", err)
 		}
 
-		ims = append(ims, im)
+		ims = append(ims, &im)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -303,15 +303,16 @@ func modDep(db *sql.DB, query string, args ...interface{}) ([]*storage.ModuleDep
 	}
 	defer rows.Close()
 
-	mds := make([]*storage.ModuleDependency, 0)
+	var mds []*storage.ModuleDependency
+
 	for rows.Next() {
-		md := &storage.ModuleDependency{}
+		var md storage.ModuleDependency
 		err := rows.Scan(&md.Dependent, &md.Dependee)
 		if err != nil {
 			return nil, fmt.Errorf("could not get module dependencies: %v", err)
 		}
 
-		mds = append(mds, md)
+		mds = append(mds, &md)
 	}
 
 	if err := rows.Err(); err != nil {
