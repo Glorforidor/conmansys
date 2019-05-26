@@ -37,15 +37,15 @@ func responseText(h func(r *http.Request) (interface{}, int, error)) http.Handle
 			data = err.Error()
 		}
 
-		items, ok := data.([]*storage.Item)
-		if !ok {
-			// TODO: might be good idea to handle this situation?
-		}
-
 		var b bytes.Buffer
-		for _, item := range items {
-			// https://www.ietf.org/rfc/rfc2046.txt says that the newline of plain/text is CRLF
-			fmt.Fprintf(&b, "%v\r\n", item.Value)
+		switch v := data.(type) {
+		case []*storage.Item:
+			for _, item := range v {
+				// https://www.ietf.org/rfc/rfc2046.txt says that the newline of plain/text is CRLF
+				fmt.Fprintf(&b, "%v\r\n", item.Value)
+			}
+		default:
+			fmt.Fprintf(&b, "%v\r\n", data)
 		}
 
 		w.Header().Set("Content-Type", "plain/text")
