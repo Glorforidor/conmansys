@@ -23,8 +23,8 @@ func New(service storage.Service) http.Handler {
 
 	h := handler{service}
 
-	r.HandleFunc("/insfile", responseJSON(h.insfile)).Methods(http.MethodGet) // default json
-	r.HandleFunc("/insfile/text", responseText(h.insfile)).Methods(http.MethodGet)
+	r.HandleFunc("/insfile", responseJSON(h.insfile)).Methods(http.MethodPost) // default json
+	r.HandleFunc("/insfile/text", responseText(h.insfile)).Methods(http.MethodPost)
 
 	return r
 }

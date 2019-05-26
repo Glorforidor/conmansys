@@ -62,7 +62,7 @@ func TestResponseJSON(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			req, _ := http.NewRequest(
-				http.MethodGet,
+				http.MethodPost,
 				url,
 				bytes.NewReader(tc.data),
 			)
@@ -132,7 +132,7 @@ func TestResponseText(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			req, _ := http.NewRequest(
-				http.MethodGet,
+				http.MethodPost,
 				url,
 				bytes.NewReader(tc.data),
 			)
