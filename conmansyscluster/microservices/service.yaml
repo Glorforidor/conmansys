@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: confservice-service
+    namespace: conmansys
+spec:
+    selector:
+        app: confservice
+    type: NodePort
+    ports:
+        - protocol: TCP
+          port: 80
+          targetPort: confservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: insservice-service
+    namespace: conmansys
+spec:
+    selector:
+        app: insservice
+    type: NodePort
+    ports:
+        - protocol: TCP
+          port: 80
+          targetPort: insservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: apigateway-service
+    namespace: conmansys
+spec:
+    selector:
+        app: apigateway
+    type: NodePort
+    ports:
+        - protocol: TCP
+          port: 80
+          targetPort: apigateway

@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: confservice-deployment
+    namespace: conmansys
+spec:
+    selector:
+        matchLabels:
+            app: confservice
+    template:
+        metadata:
+            labels:
+                app: confservice
+                type: microservice
+        spec:
+            containers:
+                - image: confservice
+                  name: confservice
+                  imagePullPolicy: Never
+                  env:
+                      - name: DBHOST
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_host
+                      - name: DBPORT
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_port
+                      - name: DBUSER
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_user
+                      - name: DBPASS
+                        valueFrom:
+                            secretKeyRef:
+                                name: conmansys-secret
+                                key: postgres_password
+                      - name: DBNAME
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_name
+                  ports:
+                      - name: confservice
+                        containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: insservice-deployment
+    namespace: conmansys
+spec:
+    selector:
+        matchLabels:
+            app: insservice
+    template:
+        metadata:
+            labels:
+                app: insservice
+                type: microservice
+        spec:
+            containers:
+                - image: insservice
+                  name: insservice
+                  imagePullPolicy: Never
+                  env:
+                      - name: DBHOST
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_host
+                      - name: DBPORT
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_port
+                      - name: DBUSER
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_user
+                      - name: DBPASS
+                        valueFrom:
+                            secretKeyRef:
+                                name: conmansys-secret
+                                key: postgres_password
+                      - name: DBNAME
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: postgres_name
+                  ports:
+                      - name: insservice
+                        containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: apigateway-deployment
+    namespace: conmansys
+spec:
+    selector:
+        matchLabels:
+            app: apigateway
+    template:
+        metadata:
+            labels:
+                app: apigateway
+                type: microservice
+        spec:
+            containers:
+                - image: apigateway
+                  name: apigateway
+                  imagePullPolicy: Never
+                  env:
+                      - name: CONFSERVICE_HOST
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: confservice_host
+                      - name: INSSERVICE_HOST
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: insservice_host
+                  ports:
+                      - name: apigateway
+                        containerPort: 80
