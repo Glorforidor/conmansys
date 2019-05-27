@@ -76,5 +76,5 @@ spec:
                                 name: conmansys-secret
                                 key: pgadmin_default_password
                   ports:
-                      - name: pgadmin-port
+                      - name: pgadmin
                         containerPort: 80

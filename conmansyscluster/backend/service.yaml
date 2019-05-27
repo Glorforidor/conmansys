@@ -28,4 +28,4 @@ spec:
         - name: pgadmin
           protocol: TCP
           port: 80
-          targetPort: pgadmin-port
+          targetPort: pgadmin
