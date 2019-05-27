@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/Glorforidor/conmansys/confservice/handler"
@@ -33,17 +35,41 @@ func main() {
 	r := handler.New(p)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    "",
 		Handler: r,
 		// lets make sure we timeout
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// run server in own go routine.
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	// buffered channel
+	c := make(chan os.Signal, 1)
+
+	// notify the channel of any interrupts.
+	signal.Notify(c, os.Interrupt)
+
+	// block until a signal is recieved
+	<-c
+
+	// wait some time before shutting down to finish work.
+	wait := 15 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+
+	// if there are no connections, then it shutsdown immediately otherwise
+	// block until wait time is over.
+	srv.Shutdown(ctx)
+
+	log.Println("shutting down")
+	os.Exit(0)
 }
 
 func dbConfig() map[string]string {
