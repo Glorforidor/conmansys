@@ -1,5 +1,21 @@
 version: "3.7"
 services:
+    apigateway:
+        build: ./apigateway/
+        image: apigateway:latest
+        depends_on:
+            - confservice
+            - insservice
+        networks:
+            conmansys_network:
+                ipv4_address: 172.18.0.6
+        environment:
+            CONFSERVICE_HOST: confservice
+            INSSERVICE_HOST: insservice
+        ports:
+            - target: 80
+              published: 8079
+              protocol: tcp
     confservice:
         build: ./confservice/
         image: confservice:latest
@@ -15,7 +31,7 @@ services:
             DBPASS: secret
             DBNAME: conmansys
         ports:
-            - target: 8080
+            - target: 80
               published: 8080
               protocol: tcp
     insservice:
@@ -33,7 +49,7 @@ services:
             DBPASS: secret
             DBNAME: conmansys
         ports:
-            - target: 8081
+            - target: 80
               published: 8081
               protocol: tcp
     postgres-service:
@@ -71,6 +87,10 @@ services:
         networks:
             testdb_network:
                 ipv4_address: 172.19.0.2
+        ports:
+            - target: 5432
+              published: 5432
+              protocol: tcp
 
 networks:
     conmansys_network:
