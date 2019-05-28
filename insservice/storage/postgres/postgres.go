@@ -153,11 +153,11 @@ func (p *postgres) GetItemsAndModules(modules ...storage.Module) ([]*storage.Ite
 				return nil, nil, fmt.Errorf("could not scan data: %v", err)
 			}
 
-			// if needed could also say: set[it.Value+"@"+it.Version] to
-			// distinguish on different versions.
 			set[string(mod.ID)] = &mod
 		}
 
+		// remove those modules we know of
+		delete(set, string(m.ID))
 	}
 
 	var items []*storage.Item
