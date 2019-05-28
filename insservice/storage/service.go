@@ -1,7 +1,10 @@
 package storage
 
+import "fmt"
+
 type Service interface {
 	GetItems(modules ...Module) ([]*Item, error)
+	GetItemsAndModules(modules ...Module) ([]*Item, []*Module, error)
 }
 
 type Item struct {

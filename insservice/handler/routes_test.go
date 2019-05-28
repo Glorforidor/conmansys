@@ -15,9 +15,14 @@ import (
 	"github.com/Glorforidor/conmansys/insservice/storage"
 )
 
+// TODO: make the test better.
+// the test does not check if the output is in correct format nor check if the
+// output is actually those from the mock data.
+
 type serviceMock struct {
-	items  []*storage.Item
-	closed bool
+	items   []*storage.Item
+	modules []*storage.Module
+	closed  bool
 }
 
 func (s *serviceMock) GetItems(modules ...storage.Module) ([]*storage.Item, error) {
@@ -26,6 +31,14 @@ func (s *serviceMock) GetItems(modules ...storage.Module) ([]*storage.Item, erro
 	}
 
 	return s.items, nil
+}
+
+func (s *serviceMock) GetItemsAndModules(modules ...storage.Module) ([]*storage.Item, []*storage.Module, error) {
+	if s.closed {
+		return nil, nil, errors.New("")
+	}
+
+	return s.items, s.modules, nil
 }
 
 var (

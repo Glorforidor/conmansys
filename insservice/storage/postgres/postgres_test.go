@@ -254,11 +254,35 @@ func TestGetItems(t *testing.T) {
 			}
 
 			for k := range tc.want {
-				_, ok := items[k]
-				if !ok {
-					t.Errorf("expected key: %v in:  %v", k, items)
+				if !testValueInItems(k, items) {
+					t.Errorf("Missing value: %v in slice: %v", k, items)
 				}
 			}
 		})
 	}
+}
+
+func testValueInItems(value string, items []*storage.Item) bool {
+	for _, i := range items {
+		if i.Value == value {
+			return true
+		}
+	}
+	return false
+}
+
+func TestGetItemsAndModules(t *testing.T) {
+	p := setup(t)
+
+	tests := []storage.Module{
+		{ID: 4},
+	}
+
+	its, mods, err := p.GetItemsAndModules(tests...)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	t.Logf("%v", its)
+	t.Logf("%v", mods)
 }
