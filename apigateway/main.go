@@ -28,10 +28,9 @@ func main() {
 
 	confserviceURL := fmt.Sprintf("http://%v", confserviceHost)
 	insserviceURL := fmt.Sprintf("http://%v", insserviceHost)
-	log.Println(confserviceURL)
-	log.Println(insserviceURL)
 
 	r := mux.NewRouter()
+	r.HandleFunc("/health", health)
 	r.HandleFunc("/api", api)
 	r.HandleFunc("/api/items", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/items/{id}", proxyHandler(confserviceURL))
@@ -83,6 +82,10 @@ func main() {
 
 	log.Println("shutting down")
 	os.Exit(0)
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 const (

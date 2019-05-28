@@ -25,12 +25,17 @@ func New(service storage.Service) http.Handler {
 
 	h := handler{service}
 
+	r.HandleFunc("/health", health)
 	r.HandleFunc("/insfile", responseJSONWithModules(h.insfileWithModules)).Methods(http.MethodPost)
 	r.HandleFunc("/insfile/text", responseTextWithModules(h.insfileWithModules)).Methods(http.MethodPost)
 	r.HandleFunc("/insfile/traverse", responseJSON(h.insfile)).Methods(http.MethodPost)
 	r.HandleFunc("/insfile/traverse/text", responseText(h.insfile)).Methods(http.MethodPost)
 
 	return r
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 // response is the response body for the client. Items and Modules should be set

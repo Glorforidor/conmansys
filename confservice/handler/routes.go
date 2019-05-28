@@ -22,6 +22,7 @@ func New(service storage.Service) http.Handler {
 
 	h := handler{service}
 
+	r.HandleFunc("/health", health)
 	r.HandleFunc("/items", h.items).Methods(http.MethodGet)
 	r.HandleFunc("/items/{id:[0-9]+}", h.item).Methods(http.MethodGet)
 	r.HandleFunc("/items", h.createItem).Methods(http.MethodPost)
@@ -60,8 +61,12 @@ func New(service storage.Service) http.Handler {
 	return r
 }
 
+func health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 var (
-	ContentType = map[string]string{
+	contentType = map[string]string{
 		"json": "application/json",
 	}
 )
@@ -90,7 +95,7 @@ func (h handler) item(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(item)
 }
 
@@ -102,7 +107,7 @@ func (h handler) items(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(i)
 }
 
@@ -132,7 +137,7 @@ func (h handler) createItem(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: perhaps a better response besides the item?
 	item.ID = i
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(item)
 }
@@ -160,7 +165,7 @@ func (h handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
 }
 
@@ -189,7 +194,7 @@ func (h handler) module(w http.ResponseWriter, r *http.Request) {
 		// TODO: do something about it
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(module)
 }
 
@@ -201,7 +206,7 @@ func (h handler) modules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(modules)
 }
 
@@ -226,7 +231,7 @@ func (h handler) createModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	module.ID = i
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(module)
 }
@@ -252,7 +257,7 @@ func (h handler) deleteModule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": row})
 }
 
@@ -277,7 +282,7 @@ func (h handler) itemModule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(im)
 }
 
@@ -289,7 +294,7 @@ func (h handler) itemModules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(ims)
 }
 
@@ -314,7 +319,7 @@ func (h handler) createItemModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	im.ID = id
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(im)
 }
@@ -340,7 +345,7 @@ func (h handler) deleteItemModule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": row})
 }
 
@@ -351,7 +356,7 @@ func (h handler) moduleDependencies(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(moddeps)
 }
 
@@ -375,7 +380,7 @@ func (h handler) moduleDependenciesByDependentID(w http.ResponseWriter, r *http.
 		log.Println(err)
 		return
 	}
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(moddeps)
 }
 
@@ -399,7 +404,7 @@ func (h handler) moduleDependenciesByDependeeID(w http.ResponseWriter, r *http.R
 		log.Println(err)
 		return
 	}
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(moddeps)
 }
 
@@ -423,7 +428,7 @@ func (h handler) createModuleDependency(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(md)
 }
@@ -459,7 +464,7 @@ func (h handler) deleteModuleDependency(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
 }
 
@@ -486,7 +491,7 @@ func (h handler) deleteModuleDependencyByDependentID(w http.ResponseWriter, r *h
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
 }
 
@@ -513,6 +518,6 @@ func (h handler) deleteModuleDependencyByDependeeID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	w.Header().Set("Content-Type", ContentType["json"])
+	w.Header().Set("Content-Type", contentType["json"])
 	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
 }
