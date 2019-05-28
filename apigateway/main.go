@@ -44,7 +44,9 @@ func main() {
 	r.HandleFunc("/api/moduledependencies/dependee/{id}", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/itemmodules/{id}", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/insfile", proxyHandler(insserviceURL))
-	r.HandleFunc("/api/insfile/text", proxyHandler(insserviceURL))
+	r.HandleFunc("/api/insfile", proxyHandler(insserviceURL))
+	r.HandleFunc("/api/insfile/traverse/text", proxyHandler(insserviceURL))
+	r.HandleFunc("/api/insfile/traverse/text", proxyHandler(insserviceURL))
 
 	srv := http.Server{
 		Addr:         "",
