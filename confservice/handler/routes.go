@@ -142,6 +142,10 @@ func (h handler) createItem(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(item)
 }
 
+type deleteResponse struct {
+	RowsAffected int64 `json:"rows_affected"`
+}
+
 func (h handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := strings.TrimSpace(params["id"])
@@ -158,7 +162,7 @@ func (h handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := h.storage.DeleteItem(i)
+	row, err := h.storage.DeleteItem(i)
 	if err != nil {
 		http.Error(w, "could not delete item", http.StatusInternalServerError)
 		log.Println(err)
@@ -166,7 +170,7 @@ func (h handler) deleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
+	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
 }
 
 func (h handler) module(w http.ResponseWriter, r *http.Request) {
@@ -258,7 +262,7 @@ func (h handler) deleteModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": row})
+	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
 }
 
 func (h handler) itemModule(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +350,7 @@ func (h handler) deleteItemModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": row})
+	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
 }
 
 func (h handler) moduleDependencies(w http.ResponseWriter, r *http.Request) {
@@ -457,7 +461,7 @@ func (h handler) deleteModuleDependency(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	rows, err := h.storage.DeleteModuleDependency(i, j)
+	row, err := h.storage.DeleteModuleDependency(i, j)
 	if err != nil {
 		http.Error(w, "could not delete item", http.StatusInternalServerError)
 		log.Println(err)
@@ -465,7 +469,7 @@ func (h handler) deleteModuleDependency(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
+	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
 }
 
 func (h handler) deleteModuleDependencyByDependentID(w http.ResponseWriter, r *http.Request) {
@@ -492,7 +496,7 @@ func (h handler) deleteModuleDependencyByDependentID(w http.ResponseWriter, r *h
 	}
 
 	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
+	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: rows})
 }
 
 func (h handler) deleteModuleDependencyByDependeeID(w http.ResponseWriter, r *http.Request) {
@@ -519,5 +523,5 @@ func (h handler) deleteModuleDependencyByDependeeID(w http.ResponseWriter, r *ht
 	}
 
 	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(map[string]interface{}{"RowsAffected": rows})
+	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: rows})
 }
