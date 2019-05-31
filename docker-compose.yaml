@@ -1,5 +1,18 @@
 version: "3.7"
 services:
+    frontend:
+        build: ./frontend/ 
+        image: frontend:latest
+        depends_on:
+            - apigateway
+        networks:
+            conmansys_network:
+        environment:
+            APIGATEWAY_HOST: apigateway
+        ports:
+            - target: 80
+              published: 8060
+              protocol: tcp
     apigateway:
         build: ./apigateway/
         image: apigateway:latest
