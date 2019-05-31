@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -39,12 +38,12 @@ func main() {
 	r.HandleFunc("/api/itemmodules", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/itemmodules/{id}", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/moduledependencies", proxyHandler(confserviceURL))
+	r.HandleFunc("/api/moduledependencies/dependent/{dependentID}/dependee/{dependeeID}", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/moduledependencies/dependent/{id}", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/moduledependencies/dependee/{id}", proxyHandler(confserviceURL))
-	r.HandleFunc("/api/itemmodules/{id}", proxyHandler(confserviceURL))
 	r.HandleFunc("/api/insfile", proxyHandler(insserviceURL))
-	r.HandleFunc("/api/insfile", proxyHandler(insserviceURL))
-	r.HandleFunc("/api/insfile/traverse/text", proxyHandler(insserviceURL))
+	r.HandleFunc("/api/insfile/text", proxyHandler(insserviceURL))
+	r.HandleFunc("/api/insfile/traverse", proxyHandler(insserviceURL))
 	r.HandleFunc("/api/insfile/traverse/text", proxyHandler(insserviceURL))
 
 	srv := http.Server{
@@ -111,8 +110,8 @@ func proxyHandler(target string) func(http.ResponseWriter, *http.Request) {
 		log.Printf("%#v", remote)
 
 		proxy := httputil.NewSingleHostReverseProxy(remote)
-
-		r.URL.Path = strings.Replace(r.URL.Path, "/api/", "/", 1)
+		// reslice path to remove /api/
+		r.URL.Path = r.URL.Path[len("/api/"):]
 
 		proxy.ServeHTTP(w, r)
 	}
