@@ -21,7 +21,6 @@ services:
             - insservice
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.6
         environment:
             CONFSERVICE_HOST: confservice
             INSSERVICE_HOST: insservice
@@ -36,7 +35,6 @@ services:
             - postgres-service
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.2
         environment:
             DBHOST: postgres-service
             DBPORT: 5432
@@ -54,7 +52,6 @@ services:
             - postgres-service
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.3
         environment:
             DBHOST: postgres-service
             DBPORT: 5432
@@ -70,7 +67,6 @@ services:
         image: postgres:latest
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.4
         environment:
             POSTGRES_PASSWORD: secret
         volumes:
@@ -84,7 +80,6 @@ services:
             - postgres-service
         networks:
             conmansys_network:
-                ipv4_address: 172.18.0.5
         ports:
             - target: 80
               published: 65535
@@ -99,12 +94,10 @@ services:
             POSTGRES_PASSWORD: secret
         networks:
             testdb_network:
-                ipv4_address: 172.19.0.2
         ports:
             - target: 5432
               published: 5432
               protocol: tcp
-
 networks:
     conmansys_network:
         name: conmansys_network
