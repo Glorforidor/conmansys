@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" type="image/png" href="/static/favicon.png"/>
+    </head>
+    <body>
+        <h1>Delete {{ title .string }} </h1>
+
+        <p>
+            {{ title .string }} with ID: {{ .id }}
+            {{ if .rows_affected }} 
+            was deleted 
+            {{ else }} 
+            was not deleted 
+            {{ end }}
+        </p>
+
+        <form action="/{{ .string }}">
+            <input type="submit" value="return">
+        </form>
+    </body>
+</html>

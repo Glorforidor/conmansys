@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" type="image/png" href="/static/favicon.png"/>
+        <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+        <h1>Saved {{ title (.string) }}</h1>
+
+        <table>
+            {{ if eq .string "items" }}
+            <tr>
+                <th>ID</th>
+                <th>Value</th>
+                <th>Type</th>
+                <th>Version</th>
+            </tr>
+            <tr>
+                <td>{{ .id }}</td>
+                <td>{{ .value }}</td>
+                <td>{{ .type }}</td>
+                <td>{{ .version }}</td>
+            </tr>
+            {{ else if eq .string "modules" }}
+            <tr>
+                <th>ID</th>
+                <th>Value</th>
+                <th>Version</th>
+            </tr>
+            <tr>
+                <td>{{ .id }}</td>
+                <td>{{ .value }}</td>
+                <td>{{ .version }}</td>
+            </tr>
+            {{ else if eq .string "itemmodules" }}
+            <tr>
+                <th>id</th>
+                <th>ItemID</th>
+                <th>ModuleID</th>
+            </tr>
+            <tr>
+                <td>{{ .id }}</td>
+                <td>{{ .item_id }}</td>
+                <td>{{ .module_id }}</td>
+            </tr>
+            {{ else if eq .string "moduledependencies" }}
+            <tr>
+                <th>Dependent</th>
+                <th>Dependee</th>
+            </tr>
+            <tr>
+                <td>{{ .dependent }}</td>
+                <td>{{ .dependee }}</td>
+            </tr>
+            {{ else if eq .string "insfile" }}
+            <tr>
+                <th>Items</th>
+            </tr>
+            {{ range .items }}
+            <tr>
+                <td>{{ .value }}</td>
+            </tr>
+            {{ end }}
+            <tr>
+                <th>Modules</th>
+            </tr>
+            {{ range .modules }}
+            <tr>
+                <td>{{ .id }}</td>
+            </tr>
+            {{ end }}
+            {{ end }}
+        </table>
+
+        <form action="/{{ .string }}">
+            <input type="submit" value="return">
+        </form>
+    </body>
+</html>

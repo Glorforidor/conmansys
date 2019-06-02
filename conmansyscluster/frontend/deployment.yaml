@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: frontend-deployment
+    namespace: conmansys
+spec:
+    selector:
+        matchLabels:
+            app: frontend
+    template:
+        metadata:
+            labels:
+                app: frontend
+        spec:
+            containers:
+                - image: frontend
+                  name: frontend
+                  imagePullPolicy: Never
+                  env:
+                      - name: APIGATEWAY_HOST
+                        valueFrom:
+                            configMapKeyRef:
+                                name: conmansys-config
+                                key: apigateway_host
+                  ports:
+                      - name: frontend
+                        containerPort: 80

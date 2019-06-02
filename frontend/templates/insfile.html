@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" type="image/png" href="/static/favicon.png"/>
+        <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+        <div class="container">
+        <form action="/insfile/created" method="POST">
+            Modules separated by comma:
+            <input type="text" name="modules"><br>
+            <input type="submit" name="json" value="json"> 
+            <input type="submit" name="text" value="text"> 
+            <input type="submit" name="json_with_traverse" value="json with traverse"> 
+            <input type="submit" name="text_with_traverse" value="text with traverse"> 
+        </form>
+        </div>
+    </body>
+</html>

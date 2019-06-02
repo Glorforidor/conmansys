@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" type="image/png" href="/static/favicon.png"/>
+        <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+        <h1>{{ title .string }}</h1>
+
+        <table>
+            {{ if eq .string "items" }}
+            <tr>
+                <th>ID</th>
+                <th>Value</th>
+                <th>Type</th>
+                <th>Version</th>
+            </tr>
+            {{ range .list }}
+            <tr>
+                <td>{{ .id }}</td>
+                <td>{{ .value }}</td>
+                <td>{{ .type }}</td>
+                <td>{{ .version }}</td>
+                <td>[<a href="/items/delete/{{ .id }}">Delete</a>]</td>
+            </tr> 
+            {{ end }}
+            {{ else if eq .string "modules" }}
+            <tr>
+                <th>ID</th>
+                <th>Value</th>
+                <th>Version</th>
+            </tr>
+            {{ range .list }}
+            <tr>
+                <td>{{ .id }}</td>
+                <td>{{ .value }}</td>
+                <td>{{ .version }}</td>
+                <td>[<a href="/modules/delete/{{ .id }}">Delete</a>]</td>
+            </tr>
+            {{ end }}
+            {{ else if eq .string "itemmodules" }}
+            <tr>
+                <th>ID</th>
+                <th>ItemID</th>
+                <th>ModuleID</th>
+            </tr>
+            {{ range .list }}
+            <tr>
+                <td>{{ .id }}</td>
+                <td>{{ .item_id }}</td>
+                <td>{{ .module_id }}</td>
+                <td>[<a href="/itemmodules/delete/{{ .id }}">Delete</a>]<td>
+            </tr>
+            {{ end }}
+            {{ else if eq .string "moduledependencies" }}
+            <tr>
+                <th>Dependent</th>
+                <th>Dependee</th>
+            </tr>
+            {{ range .list }}
+            <tr>
+                <td>{{ .dependent }}</td>
+                <td>{{ .dependee }}</td>
+                <td>
+                    [
+                        <a href="/moduledependencies/delete/dependent/{{ .dependent }}/dependee/{{ .dependee }}">
+                            Delete by dependent and dependee
+                        </a>
+                    ]
+                </td>
+                <td>
+                    [
+                        <a href="/moduledependencies/delete/dependent/{{ .dependent }}">
+                            Delete by dependent
+                        </a>
+                    ]
+                </td>
+                <td>
+                    [
+                        <a href="/moduledependencies/delete/dependee/{{ .dependee }}">
+                            Delete by dependee
+                        </a>
+                    ]
+                </td>
+            </tr>
+            {{ end }}
+            {{ end }}
+        </table>
+
+        <form action="/{{ .string }}/create">
+            <input type="submit" value="Create new {{ .string }}">
+        </form>
+
+        <form action="/">
+            <input type="submit" value="return">
+        </form>
+    </body>
+</html>

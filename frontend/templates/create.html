@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" type="image/png" href="/static/favicon.png"/>
+        <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    </head>
+    <body>
+        <h1> Create new {{ title .string }}</h1>
+
+        <div class="container">
+        {{ if eq .string "items" }} 
+        <form action="save" method="POST">
+            Value: <input type="text" name="value"><br>
+            Type: <input type="text" name="type"><br>
+            Version: <input type="text" name="version"><br><br>
+            <input type="submit" value="Create">
+        </form>
+        {{ else if eq .string "modules" }}
+        <form action="save" method="POST">
+            Value: <input type="text" name="value"><br>
+            Version: <input type="text" name="version"><br><br>
+            <input type="submit" value="Create">
+        </form>
+        {{ else if eq .string "itemmodules" }}
+        <form action="save" method="POST">
+            ItemID: <input type="text" name="item_id"><br>
+            ModuleID: <input type="text" name="module_id"><br><br>
+            <input type="submit" value="Create">
+        </form>
+        {{ else if eq .string "moduledependencies" }}
+        <form action="save" method="POST">
+            Dependent: <input type="text" name="dependent_id"><br>
+            Dependee: <input type="text" name="dependee_id"><br><br>
+            <input type="submit" value="Create">
+        </form>
+        {{end}}
+        </div>
+
+        <form action="/{{ .string }}">
+            <input type="submit" value="Return">
+        </form>
+    </body>
+</html>
