@@ -28,7 +28,7 @@ aks_mc_resource_group := MC_CONMANSYS_CONMANSYSCLUSTER_NORTHEUROPE
 acr_name := conmansys
 
 all:
-	docker build -t conmansys .
+	docker-compose up -d --build
 
 azgroup:
 	az group create \
