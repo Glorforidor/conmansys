@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,10 +24,10 @@ func New(service storage.Service) http.Handler {
 	h := handler{service}
 
 	r.HandleFunc("/health", health)
-	r.HandleFunc("/items", h.items).Methods(http.MethodGet)
-	r.HandleFunc("/items/{id:[0-9]+}", h.item).Methods(http.MethodGet)
-	r.HandleFunc("/items", h.createItem).Methods(http.MethodPost)
-	r.HandleFunc("/items/{id:[0-9]+}", h.deleteItem).Methods(http.MethodDelete)
+	r.HandleFunc("/items", responseJSON(h.items)).Methods(http.MethodGet)
+	r.HandleFunc("/items/{id:[0-9]+}", responseJSON(h.item)).Methods(http.MethodGet)
+	r.HandleFunc("/items", responseJSON(h.createItem)).Methods(http.MethodPost)
+	r.HandleFunc("/items/{id:[0-9]+}", responseJSON(h.deleteItem)).Methods(http.MethodDelete)
 	r.HandleFunc("/modules", h.modules).Methods(http.MethodGet)
 	r.HandleFunc("/modules/{id:[0-9]+}", h.module).Methods(http.MethodGet)
 	r.HandleFunc("/modules", h.createModule).Methods(http.MethodPost)
@@ -69,108 +70,153 @@ var (
 	contentType = map[string]string{
 		"json": "application/json",
 	}
+
+	errMissingValue = errors.New("missing value")
+	errNaN          = errors.New("not a number")
+	errInternal     = errors.New("Ups something went wrong")
 )
 
-func (h handler) item(w http.ResponseWriter, r *http.Request) {
+func responseJSON(h func(*http.Request) (interface{}, int)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, status := h(r)
+
+		w.Header().Set("Content-Type", contentType["json"])
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(data)
+	}
+}
+
+type itemResponse struct {
+	Item  *storage.Item `json:"item"`
+	Error *string       `json:"error"`
+}
+
+// item retrieves a specifc item from storage and returns it.
+func (h handler) item(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
 	id := strings.TrimSpace(params["id"])
+	var resp itemResponse
+	var errMsg string
 
 	// routing should prevent this, but might as well guard it
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	// routing should prevent this, but might as well guard it
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	item, err := h.storage.GetItem(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
+		errMsg = "Ups something went wrong"
+		resp.Error = &errMsg
 		log.Println(err)
-		return
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(item)
+	resp.Item = item
+	return resp, http.StatusOK
 }
 
-func (h handler) items(w http.ResponseWriter, r *http.Request) {
+type itemsResponse struct {
+	Items []*storage.Item `json:"items"`
+	Error *string         `json:"error"`
+}
+
+// items retrieves items from storage and return it.
+func (h handler) items(r *http.Request) (data interface{}, status int) {
+	var resp itemsResponse
+	// ensure that there is a empty slice
+	resp.Items = []*storage.Item{}
+
 	i, err := h.storage.GetItems()
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
+		errMsg := errInternal.Error()
+		resp.Error = &errMsg
 		log.Println(err)
-		return
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(i)
+	resp.Items = i
+	return resp, http.StatusOK
 }
 
-func (h handler) createItem(w http.ResponseWriter, r *http.Request) {
-	item := &storage.Item{}
-	err := json.NewDecoder(r.Body).Decode(item)
+func (h handler) createItem(r *http.Request) (data interface{}, status int) {
+	var resp itemResponse
+	var item storage.Item
+	var errMsg string
+
+	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		http.Error(w, "wrong input format", http.StatusBadRequest)
-		return
+		errMsg = "wrong input format"
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	if item.Value == "" || item.Type == "" || item.Version == "" {
-		http.Error(w, "missing values", http.StatusBadRequest)
-		return
+		errMsg = "missing values"
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := h.storage.CreateItem(item.Value, item.Type, item.Version)
 	if err != nil {
-		http.Error(
-			w,
-			"Ups something happend, thus the item is not created",
-			http.StatusInternalServerError,
-		)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
 	// TODO: perhaps a better response besides the item?
 	item.ID = i
-	w.Header().Set("Content-Type", contentType["json"])
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(item)
+	resp.Item = &item
+	return resp, http.StatusCreated
 }
 
 type deleteResponse struct {
-	RowsAffected int64 `json:"rows_affected"`
+	RowsAffected int64   `json:"rows_affected"`
+	Error        *string `json:"error"`
 }
 
-func (h handler) deleteItem(w http.ResponseWriter, r *http.Request) {
+func (h handler) deleteItem(r *http.Request) (interface{}, int) {
 	params := mux.Vars(r)
 	id := strings.TrimSpace(params["id"])
+	var resp deleteResponse
+	var errMsg string
+
 	// routing should prevent this, but might as well guard it
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
+		// http.Error(w, "missing value", http.StatusBadRequest)
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	// routing should prevent this, but might as well guard it
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	row, err := h.storage.DeleteItem(i)
 	if err != nil {
-		http.Error(w, "could not delete item", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
+	resp.RowsAffected = row
+	return resp, http.StatusOK
 }
 
 func (h handler) module(w http.ResponseWriter, r *http.Request) {
