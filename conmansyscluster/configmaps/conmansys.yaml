@@ -9,5 +9,6 @@ data:
     postgres_port: "5432"
     postgres_name: conmansys
     pgadmin_default_email: pejak1990@gmail.com
+    apigateway_host: "apigateway-service"
     confservice_host: "confservice-service"
     insservice_host: "insservice-service"
