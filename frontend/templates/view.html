@@ -15,7 +15,7 @@
                 <th>Type</th>
                 <th>Version</th>
             </tr>
-            {{ range .list }}
+            {{ range .items }}
             <tr>
                 <td>{{ .id }}</td>
                 <td>{{ .value }}</td>
@@ -30,7 +30,7 @@
                 <th>Value</th>
                 <th>Version</th>
             </tr>
-            {{ range .list }}
+            {{ range .modules }}
             <tr>
                 <td>{{ .id }}</td>
                 <td>{{ .value }}</td>
@@ -44,7 +44,7 @@
                 <th>ItemID</th>
                 <th>ModuleID</th>
             </tr>
-            {{ range .list }}
+            {{ range .item_modules }}
             <tr>
                 <td>{{ .id }}</td>
                 <td>{{ .item_id }}</td>
@@ -57,7 +57,7 @@
                 <th>Dependent</th>
                 <th>Dependee</th>
             </tr>
-            {{ range .list }}
+            {{ range .module_dependencies }}
             <tr>
                 <td>{{ .dependent }}</td>
                 <td>{{ .dependee }}</td>

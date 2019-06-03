@@ -16,10 +16,10 @@
                 <th>Version</th>
             </tr>
             <tr>
-                <td>{{ .id }}</td>
-                <td>{{ .value }}</td>
-                <td>{{ .type }}</td>
-                <td>{{ .version }}</td>
+                <td>{{ .item.id }}</td>
+                <td>{{ .item.value }}</td>
+                <td>{{ .item.type }}</td>
+                <td>{{ .item.version }}</td>
             </tr>
             {{ else if eq .string "modules" }}
             <tr>
@@ -28,9 +28,9 @@
                 <th>Version</th>
             </tr>
             <tr>
-                <td>{{ .id }}</td>
-                <td>{{ .value }}</td>
-                <td>{{ .version }}</td>
+                <td>{{ .module.id }}</td>
+                <td>{{ .module.value }}</td>
+                <td>{{ .module.version }}</td>
             </tr>
             {{ else if eq .string "itemmodules" }}
             <tr>
@@ -39,9 +39,9 @@
                 <th>ModuleID</th>
             </tr>
             <tr>
-                <td>{{ .id }}</td>
-                <td>{{ .item_id }}</td>
-                <td>{{ .module_id }}</td>
+                <td>{{ .item_module.id }}</td>
+                <td>{{ .item_module.item_id }}</td>
+                <td>{{ .item_module.module_id }}</td>
             </tr>
             {{ else if eq .string "moduledependencies" }}
             <tr>
@@ -49,8 +49,8 @@
                 <th>Dependee</th>
             </tr>
             <tr>
-                <td>{{ .dependent }}</td>
-                <td>{{ .dependee }}</td>
+                <td>{{ .module_dependency.dependent }}</td>
+                <td>{{ .module_dependency.dependee }}</td>
             </tr>
             {{ else if eq .string "insfile" }}
             <tr>

@@ -132,13 +132,6 @@ func saveHandler(c conmansys, target string) http.HandlerFunc {
 			return
 		}
 
-		var m map[string]interface{}
-		err = json.Unmarshal(b, &m)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		req, err := http.NewRequest(http.MethodPost, target, bytes.NewReader(b))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,18 +151,20 @@ func saveHandler(c conmansys, target string) http.HandlerFunc {
 			return
 		}
 
-		var mm map[string]interface{}
-		err = json.Unmarshal(b, &mm)
+		var m map[string]interface{}
+		err = json.Unmarshal(b, &m)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if v, ok := mm["id"]; ok {
-			m["id"] = int64(v.(float64))
+		if m["error"] != nil {
+			http.Error(w, m["error"].(string), http.StatusInternalServerError)
+			return
 		}
 
 		m["string"] = c.String()
+		log.Printf("%#v", m)
 
 		renderTemplate(w, "save.html", m)
 	}
@@ -293,7 +288,7 @@ func viewHandler(c conmansys, target string) http.HandlerFunc {
 		}
 		defer resp.Body.Close()
 
-		var m []map[string]interface{}
+		var m map[string]interface{}
 		err = json.NewDecoder(resp.Body).Decode(&m)
 		if err != nil {
 			log.Printf("could not decode data: %v", err)
@@ -301,12 +296,9 @@ func viewHandler(c conmansys, target string) http.HandlerFunc {
 			return
 		}
 
-		mm := map[string]interface{}{
-			"string": c.String(),
-			"list":   m,
-		}
+		m["string"] = c.String()
 
-		renderTemplate(w, "view.html", mm)
+		renderTemplate(w, "view.html", m)
 	}
 }
 

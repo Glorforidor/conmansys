@@ -138,6 +138,7 @@ func (h handler) insfile(r *http.Request) (interface{}, int, error) {
 	return items, http.StatusOK, nil
 }
 
+// TODO: would be better to return a csv style file back.
 func responseTextWithModules(h func(r *http.Request) ([]interface{}, int, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, status, err := h(r)
