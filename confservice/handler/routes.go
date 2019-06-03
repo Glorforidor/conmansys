@@ -28,35 +28,35 @@ func New(service storage.Service) http.Handler {
 	r.HandleFunc("/items/{id:[0-9]+}", responseJSON(h.item)).Methods(http.MethodGet)
 	r.HandleFunc("/items", responseJSON(h.createItem)).Methods(http.MethodPost)
 	r.HandleFunc("/items/{id:[0-9]+}", responseJSON(h.deleteItem)).Methods(http.MethodDelete)
-	r.HandleFunc("/modules", h.modules).Methods(http.MethodGet)
-	r.HandleFunc("/modules/{id:[0-9]+}", h.module).Methods(http.MethodGet)
-	r.HandleFunc("/modules", h.createModule).Methods(http.MethodPost)
-	r.HandleFunc("/modules/{id:[0-9]+}", h.deleteModule).Methods(http.MethodDelete)
-	r.HandleFunc("/itemmodules", h.itemModules).Methods(http.MethodGet)
-	r.HandleFunc("/itemmodules/{id:[0-9]+}", h.itemModule).Methods(http.MethodGet)
-	r.HandleFunc("/itemmodules", h.createItemModule).Methods(http.MethodPost)
-	r.HandleFunc("/itemmodules/{id:[0-9]+}", h.deleteItemModule).Methods(http.MethodDelete)
-	r.HandleFunc("/moduledependencies", h.moduleDependencies).Methods(http.MethodGet)
+	r.HandleFunc("/modules", responseJSON(h.modules)).Methods(http.MethodGet)
+	r.HandleFunc("/modules/{id:[0-9]+}", responseJSON(h.module)).Methods(http.MethodGet)
+	r.HandleFunc("/modules", responseJSON(h.createModule)).Methods(http.MethodPost)
+	r.HandleFunc("/modules/{id:[0-9]+}", responseJSON(h.deleteModule)).Methods(http.MethodDelete)
+	r.HandleFunc("/itemmodules", responseJSON(h.itemModules)).Methods(http.MethodGet)
+	r.HandleFunc("/itemmodules/{id:[0-9]+}", responseJSON(h.itemModule)).Methods(http.MethodGet)
+	r.HandleFunc("/itemmodules", responseJSON(h.createItemModule)).Methods(http.MethodPost)
+	r.HandleFunc("/itemmodules/{id:[0-9]+}", responseJSON(h.deleteItemModule)).Methods(http.MethodDelete)
+	r.HandleFunc("/moduledependencies", responseJSON(h.moduleDependencies)).Methods(http.MethodGet)
 	r.HandleFunc(
 		"/moduledependencies/dependent/{id:[0-9]+}",
-		h.moduleDependenciesByDependentID,
+		responseJSON(h.moduleDependenciesByDependentID),
 	).Methods(http.MethodGet)
 	r.HandleFunc(
 		"/moduledependencies/dependee/{id:[0-9]+}",
-		h.moduleDependenciesByDependeeID,
+		responseJSON(h.moduleDependenciesByDependeeID),
 	).Methods(http.MethodGet)
-	r.HandleFunc("/moduledependencies", h.createModuleDependency).Methods(http.MethodPost)
+	r.HandleFunc("/moduledependencies", responseJSON(h.createModuleDependency)).Methods(http.MethodPost)
 	r.HandleFunc(
 		"/moduledependencies/dependent/{dependentID:[0-9]+}/dependee/{dependeeID:[0-9]+}",
-		h.deleteModuleDependency,
+		responseJSON(h.deleteModuleDependency),
 	).Methods(http.MethodDelete)
 	r.HandleFunc(
 		"/moduledependencies/dependent/{id:[0-9]+}",
-		h.deleteModuleDependencyByDependentID,
+		responseJSON(h.deleteModuleDependencyByDependentID),
 	).Methods(http.MethodDelete)
 	r.HandleFunc(
 		"/moduledependencies/dependee/{id:[0-9]+}",
-		h.deleteModuleDependencyByDependeeID,
+		responseJSON(h.deleteModuleDependencyByDependeeID),
 	).Methods(http.MethodDelete)
 
 	return r
@@ -71,6 +71,7 @@ var (
 		"json": "application/json",
 	}
 
+	errWrongFormat  = errors.New("wrong input format")
 	errMissingValue = errors.New("missing value")
 	errNaN          = errors.New("not a number")
 	errInternal     = errors.New("Ups something went wrong")
@@ -91,7 +92,8 @@ type itemResponse struct {
 	Error *string       `json:"error"`
 }
 
-// item retrieves a specifc item from storage and returns it.
+// item retrieves a specifc item from storage packs it into a response and
+// return it as an empty interface and http status.
 func (h handler) item(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
 	id := strings.TrimSpace(params["id"])
@@ -115,7 +117,7 @@ func (h handler) item(r *http.Request) (data interface{}, status int) {
 
 	item, err := h.storage.GetItem(i)
 	if err != nil {
-		errMsg = "Ups something went wrong"
+		errMsg = errInternal.Error()
 		resp.Error = &errMsg
 		log.Println(err)
 		return resp, http.StatusInternalServerError
@@ -130,10 +132,11 @@ type itemsResponse struct {
 	Error *string         `json:"error"`
 }
 
-// items retrieves items from storage and return it.
+// items retrieves items from storage packs it into a response and returns it as
+// an empty interface with http status.
 func (h handler) items(r *http.Request) (data interface{}, status int) {
 	var resp itemsResponse
-	// ensure that there is a empty slice
+	// ensure that there is an empty slice
 	resp.Items = []*storage.Item{}
 
 	i, err := h.storage.GetItems()
@@ -148,6 +151,7 @@ func (h handler) items(r *http.Request) (data interface{}, status int) {
 	return resp, http.StatusOK
 }
 
+// createItem creates an item in the storage and return the newly created item.
 func (h handler) createItem(r *http.Request) (data interface{}, status int) {
 	var resp itemResponse
 	var item storage.Item
@@ -155,7 +159,7 @@ func (h handler) createItem(r *http.Request) (data interface{}, status int) {
 
 	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		errMsg = "wrong input format"
+		errMsg = errWrongFormat.Error()
 		resp.Error = &errMsg
 		return resp, http.StatusBadRequest
 	}
@@ -185,7 +189,10 @@ type deleteResponse struct {
 	Error        *string `json:"error"`
 }
 
-func (h handler) deleteItem(r *http.Request) (interface{}, int) {
+// deleteItem deletes the item in storage and packs the information about the
+// deletion into an response. It returns the response as an empty interface and
+// a http status.
+func (h handler) deleteItem(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
 	id := strings.TrimSpace(params["id"])
 	var resp deleteResponse
@@ -196,7 +203,6 @@ func (h handler) deleteItem(r *http.Request) (interface{}, int) {
 		errMsg = errMissingValue.Error()
 		resp.Error = &errMsg
 		return resp, http.StatusBadRequest
-		// http.Error(w, "missing value", http.StatusBadRequest)
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
@@ -219,355 +225,484 @@ func (h handler) deleteItem(r *http.Request) (interface{}, int) {
 	return resp, http.StatusOK
 }
 
-func (h handler) module(w http.ResponseWriter, r *http.Request) {
+type moduleResponse struct {
+	Module *storage.Module `json:"module"`
+	Error  *string         `json:"error"`
+}
+
+// module retrieves a module from storage. It packs the information about the
+// retrieval into a response. It returns the response as an empty interface and
+// a http status.
+func (h handler) module(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
 	id := params["id"]
+	var resp moduleResponse
+	var errMsg string
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	module, err := h.storage.GetModule(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	if module == nil {
-		// TODO: do something about it
-	}
-
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(module)
+	resp.Module = module
+	return resp, http.StatusOK
 }
 
-func (h handler) modules(w http.ResponseWriter, r *http.Request) {
+type modulesResponse struct {
+	Modules []*storage.Module `json:"modules"`
+	Error   *string           `json:"error"`
+}
+
+// modules retrieve all modules from storage and packs the information about the
+// retrieval into a response. It returns the response as an empty interface and
+// a http status.
+func (h handler) modules(r *http.Request) (data interface{}, status int) {
+	var resp modulesResponse
 	modules, err := h.storage.GetModules()
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg := errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(modules)
+	resp.Modules = modules
+	return resp, http.StatusOK
 }
 
-func (h handler) createModule(w http.ResponseWriter, r *http.Request) {
-	module := &storage.Module{}
-	err := json.NewDecoder(r.Body).Decode(module)
+// createModule creates a module in the storage. It will respond with the newly
+// create module and a http status.
+func (h handler) createModule(r *http.Request) (data interface{}, status int) {
+	var resp moduleResponse
+	var errMsg string
+	var module storage.Module
+	err := json.NewDecoder(r.Body).Decode(&module)
 	if err != nil {
-		http.Error(w, "wrong input format", http.StatusBadRequest)
-		return
+		errMsg = errWrongFormat.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	if module.Value == "" || module.Version == "" {
-		http.Error(w, "missing values", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := h.storage.CreateModule(module.Value, module.Version)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
 	module.ID = i
-	w.Header().Set("Content-Type", contentType["json"])
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(module)
+	resp.Module = &module
+	return resp, http.StatusCreated
 }
 
-func (h handler) deleteModule(w http.ResponseWriter, r *http.Request) {
+// deleteModule deletes the item from storage and packs the deletion information
+// into a response. It returns the response as an empty interface and a http
+// status.
+func (h handler) deleteModule(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp deleteResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	row, err := h.storage.DeleteModule(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
+	resp.RowsAffected = row
+	return resp, http.StatusOK
 }
 
-func (h handler) itemModule(w http.ResponseWriter, r *http.Request) {
+type itemModuleResponse struct {
+	ItemModule *storage.ItemModule `json:"item_module"`
+	Error      *string             `json:"error"`
+}
+
+// itemModule retrieves a item module from storage and packs the retrivel
+// information into a response. It returns the response as an empty interface
+// and a http status.
+func (h handler) itemModule(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp itemModuleResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	im, err := h.storage.GetItemModule(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(im)
+	resp.ItemModule = im
+	return resp, http.StatusOK
 }
 
-func (h handler) itemModules(w http.ResponseWriter, r *http.Request) {
+type itemModulesResponse struct {
+	ItemModules []*storage.ItemModule `json:"item_modules"`
+	Error       *string               `json:"error"`
+}
+
+// itemModules retrieve all modules from storage and packs the retrieval
+// information into a response. It returns the response as an empty interface
+// and a http status.
+func (h handler) itemModules(r *http.Request) (data interface{}, status int) {
+	var resp itemModulesResponse
 	ims, err := h.storage.GetItemModules()
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg := errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(ims)
+	resp.ItemModules = ims
+	return resp, http.StatusOK
 }
 
-func (h handler) createItemModule(w http.ResponseWriter, r *http.Request) {
-	im := &storage.ItemModule{}
-	err := json.NewDecoder(r.Body).Decode(im)
+// createItemModule inserts a new item module into storage and packs the
+// creation information into a response. It returns the response as an empty
+// interface and a http status.
+func (h handler) createItemModule(r *http.Request) (data interface{}, status int) {
+	var resp itemModuleResponse
+	var errMsg string
+	var im storage.ItemModule
+	err := json.NewDecoder(r.Body).Decode(&im)
 	if err != nil {
-		http.Error(w, "wrong input format", http.StatusBadRequest)
-		return
+		errMsg = errWrongFormat.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	if im.ItemID == 0 || im.ModuleID == 0 {
-		http.Error(w, "missing values", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	id, err := h.storage.CreateItemModule(im.ItemID, im.ModuleID)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
 	im.ID = id
-	w.Header().Set("Content-Type", contentType["json"])
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(im)
+	resp.ItemModule = &im
+	return resp, http.StatusCreated
 }
 
-func (h handler) deleteItemModule(w http.ResponseWriter, r *http.Request) {
+// deleteItemModule deletes a item module from the storage and packs the
+// deletion information into a response. It returns the response as an empty
+// interface and a http status.
+func (h handler) deleteItemModule(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp deleteResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	row, err := h.storage.DeleteItemModule(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
+	resp.RowsAffected = row
+	return resp, http.StatusOK
 }
 
-func (h handler) moduleDependencies(w http.ResponseWriter, r *http.Request) {
+type moduleDependenciesResponse struct {
+	ModuleDependencies []*storage.ModuleDependency `json:"module_dependencies"`
+	Error              *string                     `json:"error"`
+}
+
+// moduleDependencies retrieve all module dependencies from storage and packs
+// the retrieval information into a response. It returns the response as an
+// empty interface and a http status.
+func (h handler) moduleDependencies(r *http.Request) (data interface{}, status int) {
+	var resp moduleDependenciesResponse
 	moddeps, err := h.storage.GetModuleDependencies()
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg := errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(moddeps)
+
+	resp.ModuleDependencies = moddeps
+	return resp, http.StatusOK
 }
 
-func (h handler) moduleDependenciesByDependentID(w http.ResponseWriter, r *http.Request) {
+// moduleDependenciesByDependentID retrieve all moduledependencies from storage
+// by a dependent id and packs retrieval information into a response. It returns
+// the response as an empty interface and a http status.
+func (h handler) moduleDependenciesByDependentID(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp moduleDependenciesResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	moddeps, err := h.storage.GetModuleDependenciesByDependentID(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(moddeps)
+
+	resp.ModuleDependencies = moddeps
+	return resp, http.StatusOK
 }
 
-func (h handler) moduleDependenciesByDependeeID(w http.ResponseWriter, r *http.Request) {
+// moduleDependenciesByDependeeID retrieve all module dependencies from storage
+// by a dependee id and packs retrieval information into a response. It returns
+// the response as an empty interface and a http status.
+func (h handler) moduleDependenciesByDependeeID(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp moduleDependenciesResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	moddeps, err := h.storage.GetModuleDependenciesByDependeeID(i)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(moddeps)
+
+	resp.ModuleDependencies = moddeps
+	return resp, http.StatusOK
 }
 
-func (h handler) createModuleDependency(w http.ResponseWriter, r *http.Request) {
-	md := &storage.ModuleDependency{}
-	err := json.NewDecoder(r.Body).Decode(md)
+type moduleDependencyResponse struct {
+	ModuleDependency *storage.ModuleDependency `json:"module_dependency"`
+	Error            *string                   `json:"error"`
+}
+
+// createModuleDependency inserts a new module dependency into storage and packs
+// creation information into a response. It returns the response as an empty
+// interface and a http status.
+func (h handler) createModuleDependency(r *http.Request) (data interface{}, status int) {
+	var resp moduleDependencyResponse
+	var errMsg string
+	var md storage.ModuleDependency
+	err := json.NewDecoder(r.Body).Decode(&md)
 	if err != nil {
-		http.Error(w, "wrong input format", http.StatusBadRequest)
-		return
+		errMsg = errWrongFormat.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	if md.Dependent == 0 || md.Dependee == 0 {
-		http.Error(w, "missing values", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	err = h.storage.CreateModuleDependency(md.Dependent, md.Dependee)
 	if err != nil {
-		http.Error(w, "Ups something went wrong", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(md)
+	resp.ModuleDependency = &md
+	return resp, http.StatusCreated
 }
 
-func (h handler) deleteModuleDependency(w http.ResponseWriter, r *http.Request) {
+func (h handler) deleteModuleDependency(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp deleteResponse
+	var errMsg string
+
 	dependentID := strings.TrimSpace(params["dependentID"])
 	dependeeID := strings.TrimSpace(params["dependeeID"])
 	// routing should prevent this, but might as well guard it
 	if dependentID == "" || dependeeID == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(dependentID, 10, 64)
 	// routing should prevent this, but might as well guard it
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	j, err := strconv.ParseInt(dependeeID, 10, 64)
 	// routing should prevent this, but might as well guard it
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	row, err := h.storage.DeleteModuleDependency(i, j)
 	if err != nil {
-		http.Error(w, "could not delete item", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: row})
+	resp.RowsAffected = row
+	return resp, http.StatusOK
 }
 
-func (h handler) deleteModuleDependencyByDependentID(w http.ResponseWriter, r *http.Request) {
+func (h handler) deleteModuleDependencyByDependentID(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp deleteResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	// routing should prevent this, but might as well guard it
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	// routing should prevent this, but might as well guard it
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	rows, err := h.storage.DeleteModuleDependencyByDependentID(i)
 	if err != nil {
-		http.Error(w, "could not delete item", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: rows})
+	resp.RowsAffected = rows
+	return resp, http.StatusOK
 }
 
-func (h handler) deleteModuleDependencyByDependeeID(w http.ResponseWriter, r *http.Request) {
+func (h handler) deleteModuleDependencyByDependeeID(r *http.Request) (data interface{}, status int) {
 	params := mux.Vars(r)
+	var resp deleteResponse
+	var errMsg string
 	id := strings.TrimSpace(params["id"])
 	// routing should prevent this, but might as well guard it
 	if id == "" {
-		http.Error(w, "missing value", http.StatusBadRequest)
-		return
+		errMsg = errMissingValue.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	// routing should prevent this, but might as well guard it
 	if err != nil {
-		http.Error(w, "not a number", http.StatusBadRequest)
-		return
+		errMsg = errNaN.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusBadRequest
 	}
 
 	rows, err := h.storage.DeleteModuleDependencyByDependeeID(i)
 	if err != nil {
-		http.Error(w, "could not delete item", http.StatusInternalServerError)
 		log.Println(err)
-		return
+		errMsg = errInternal.Error()
+		resp.Error = &errMsg
+		return resp, http.StatusInternalServerError
 	}
 
-	w.Header().Set("Content-Type", contentType["json"])
-	json.NewEncoder(w).Encode(deleteResponse{RowsAffected: rows})
+	resp.RowsAffected = rows
+	return resp, http.StatusOK
 }
