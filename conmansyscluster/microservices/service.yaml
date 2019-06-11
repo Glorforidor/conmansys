@@ -6,7 +6,7 @@ metadata:
 spec:
     selector:
         app: confservice
-    type: NodePort
+    type: ClusterIP
     ports:
         - protocol: TCP
           port: 80
@@ -20,7 +20,7 @@ metadata:
 spec:
     selector:
         app: insservice
-    type: NodePort
+    type: ClusterIP
     ports:
         - protocol: TCP
           port: 80
@@ -34,7 +34,7 @@ metadata:
 spec:
     selector:
         app: apigateway
-    type: NodePort
+    type: LoadBalancer
     ports:
         - protocol: TCP
           port: 80

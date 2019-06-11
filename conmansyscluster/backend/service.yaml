@@ -7,7 +7,7 @@ spec:
     selector:
         app: postgres
         tier: backend
-    type: NodePort
+    type: ClusterIP
     ports:
         - name: postgres
           protocol: TCP
