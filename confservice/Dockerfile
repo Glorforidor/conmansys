@@ -14,9 +14,6 @@ RUN go mod download
 
 COPY . .
 
-# fetch dependencies and build application
-# RUN go get -d -v ./... && CGO_ENABLED=0 GOOS=linux go build -a
-
 # build go package without CGO
 # might need to add -a to force build if the docker cache fails me
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/confservice .
