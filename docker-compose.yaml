@@ -65,6 +65,7 @@ services:
     postgres-service:
         container_name: postydb
         image: postgres:latest
+        shm_size: '256mb'
         networks:
             conmansys_network:
         environment:
@@ -90,6 +91,7 @@ services:
     testdb:
         container_name: testdb
         image: postgres:latest
+        shm_size: '256mb'
         environment:
             POSTGRES_PASSWORD: secret
         networks:
