@@ -15,7 +15,7 @@ COPY . .
 
 # build go package without CGO
 # might need to add -a to force build if the docker cache fails me
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/insservice .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/insservice .
 
 # create minimal image to save space
 FROM scratch
