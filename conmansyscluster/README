@@ -1,24 +1,35 @@
-Instructions:
+# Instructions
+
 To deploy this project to kubernetes do the following:
 
-# create a unique namespace
-kubectl apply -f namespaces 
+## create a unique namespace
 
-# make the new namespace the default
-kubeclt config set-context --current --namespace conmansys
+kubectl apply -f namespaces
 
-# create new storage for database
-kubectl apply -f storage    
+## make the new namespace the default
 
-# create configmaps (environment variables) for pods
-kubectl apply -f configmaps 
+kubectl config set-context --current --namespace conmansys
 
-# create secrets  (secret environment variables) for pods
-kubectl apply -f secrets    
+## create new storage for database
 
-# create the database and a manager (manager only 
-kubectl apply -f backend    
+kubectl apply -f storage
 
-# create microservices
+## create configmaps (environment variables) for pods
+
+kubectl apply -f configmaps
+
+## create secrets  (secret environment variables) for pods
+
+kubectl apply -f secrets
+
+## create the database and a manager
+
+kubectl apply -f backend
+
+## create microservices
+
 kubectl apply -f microservices
 
+## create frontend
+
+kubectl apply -f frontend
