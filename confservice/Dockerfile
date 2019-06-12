@@ -6,8 +6,7 @@ WORKDIR /confservice
 RUN apk update && apk add --update --no-cache ca-certificates git
 
 # use go modules for dependencies
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 
 # fetch dependencies
 RUN go mod download
