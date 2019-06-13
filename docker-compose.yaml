@@ -99,16 +99,8 @@ services:
               protocol: tcp
 networks:
     conmansys_network:
-        name: conmansys_network
         driver: bridge
-        ipam:
-            config:
-                - subnet: 172.18.0.0/24
     testdb_network:
-        name: testdb_network
         driver: bridge
-        ipam:
-            config:
-                - subnet: 172.19.0.0/24
 volumes:
     db-data:
