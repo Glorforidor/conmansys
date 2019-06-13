@@ -47,7 +47,10 @@ CREATE TABLE conf_item_module(
 
 // there must be a better way?
 func setup() {
-	host := "172.19.0.2"
+	host, ok := os.LookupEnv("DBHOST")
+	if !ok {
+		panic("missing variable DBHOST")
+	}
 	port := "5432"
 	user := "postgres"
 	pass := "secret"
@@ -73,6 +76,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestNew(t *testing.T) {
+	host, ok := os.LookupEnv("DBHOST")
+	if !ok {
+		panic("missing variable DBHOST")
+	}
 	tt := map[string]struct {
 		host   string
 		port   string
@@ -82,14 +89,14 @@ func TestNew(t *testing.T) {
 		err    bool
 	}{
 		"good connection": {
-			host:   "172.19.0.2", // important a test database is running
+			host:   host, // important a test database is running
 			port:   "5432",
 			user:   "postgres",
 			pass:   "secret",
 			dbname: "postgres", // connect to default database
 		},
 		"bad connection": {
-			host:   "172.19.0.2",
+			host:   host,
 			port:   "5000",
 			user:   "postgres",
 			pass:   "secret",
