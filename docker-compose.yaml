@@ -63,8 +63,7 @@ services:
               published: 8081
               protocol: tcp
     postgres-service:
-        container_name: postydb
-        image: postgres:latest
+        image: postgres:alpine
         shm_size: '256mb'
         networks:
             conmansys_network:
@@ -75,7 +74,6 @@ services:
               source: db-data
               target: /var/lib/postgresql/data
     pgadmin4:
-        container_name: postyadmin
         image: dpage/pgadmin4:latest
         depends_on:
             - postgres-service
@@ -89,8 +87,7 @@ services:
             PGADMIN_DEFAULT_EMAIL: pejak1990@gmail.com
             PGADMIN_DEFAULT_PASSWORD: secret
     testdb:
-        container_name: testdb
-        image: postgres:latest
+        image: postgres:alpine
         shm_size: '256mb'
         environment:
             POSTGRES_PASSWORD: secret
