@@ -3,7 +3,7 @@ FROM golang:alpine as builder
 WORKDIR /frontend
 
 # add git so we can fetch dependencies with go get
-RUN apk update && apk add --update --no-cache ca-certificates git
+RUN apk add --no-cache ca-certificates git
 
 # use go modules for dependencies
 COPY go.mod go.sum ./
