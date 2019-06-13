@@ -1,8 +1,8 @@
 -- Drop tables if they exists. Useful to flush data
+DROP TABLE IF EXISTS conf_module_dependency;
 DROP TABLE IF EXISTS conf_item_module;
 DROP TABLE IF EXISTS conf_item;
 DROP TABLE IF EXISTS conf_module;
-DROP TABLE IF EXISTS conf_module_dependency;
 
 -- Create conf_item table. 
 -- Table can not consist of null data since it would not make since.
