@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Glorforidor/conmansys/insservice/storage"
@@ -80,9 +81,13 @@ INSERT INTO conf_module_dependency (dependent, dependee) VALUES
 )
 
 func setup(t *testing.T) *postgres {
+	host, ok := os.LookupEnv("DBHOST")
+	if !ok {
+		panic("missing environment variable DBHOST")
+	}
 
 	p, err := New(
-		"172.19.0.2",
+		host,
 		"5432",
 		"postgres",
 		"secret",
@@ -106,6 +111,10 @@ func setup(t *testing.T) *postgres {
 }
 
 func TestNew(t *testing.T) {
+	host, ok := os.LookupEnv("DBHOST")
+	if !ok {
+		panic("missing environment variable DBHOST")
+	}
 	tt := map[string]struct {
 		host   string
 		port   string
@@ -115,14 +124,14 @@ func TestNew(t *testing.T) {
 		err    bool
 	}{
 		"good connection": {
-			host:   "172.19.0.2", // important a test database is running
+			host:   host, // important a test database is running
 			port:   "5432",
 			user:   "postgres",
 			pass:   "secret",
 			dbname: "postgres",
 		},
 		"bad connection": {
-			host:   "172.19.0.2",
+			host:   host,
 			port:   "5432",
 			user:   "postgres",
 			pass:   "secret",
@@ -249,7 +258,6 @@ func TestGetItems(t *testing.T) {
 			}
 
 			if len(items) != len(tc.want) {
-				t.Log(items)
 				t.Errorf("expected map length of: %v, got: %v", len(tc.want), len(items))
 			}
 
@@ -283,6 +291,7 @@ func TestGetItemsAndModules(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Logf("%v", its)
-	t.Logf("%v", mods)
+	if len(its) == 0 && len(mods) == 0 {
+		t.Fatalf("expected non empty data, got: items: %v and modules: %v", its, mods)
+	}
 }
