@@ -123,7 +123,6 @@ func (d *dbmock) GetModuleDependenciesByDependentID(dependentID int64) ([]*stora
 		if dep.Dependent == dependentID {
 			deps = append(deps, dep)
 		}
-
 	}
 
 	return deps, nil
@@ -139,7 +138,6 @@ func (d *dbmock) GetModuleDependenciesByDependeeID(dependeeID int64) ([]*storage
 		if dep.Dependee == dependeeID {
 			deps = append(deps, dep)
 		}
-
 	}
 
 	return deps, nil
@@ -245,15 +243,19 @@ func TestItem(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.Item{}
-			if err := json.NewDecoder(resp.Body).Decode(item); err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+			data := &itemResponse{}
+			if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
+				t.Fatalf("expected a itemResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
 			}
 
 			i, _ := strconv.ParseInt(tc.input, 10, 64)
 
-			if item.ID != i {
-				t.Fatalf("expected: %v, got: %v", 1, item.ID)
+			if data.Item.ID != i {
+				t.Fatalf("expected: %v, got: %v", 1, data.Item.ID)
 			}
 		})
 	}
@@ -295,10 +297,18 @@ func TestItems(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			items := make([]*storage.Item, 0)
-			err = json.NewDecoder(resp.Body).Decode(&items)
+			data := &itemsResponse{}
+			err = json.NewDecoder(resp.Body).Decode(&data)
 			if err != nil {
-				t.Fatalf("expected slice of storage.Item, got: %v", err)
+				t.Fatalf("expected a itemsResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			if len(data.Items) == 0 {
+				t.Fatal("expected non empty slice of storage.Item")
 			}
 		})
 	}
@@ -371,10 +381,24 @@ func TestCreateItem(t *testing.T) {
 				t.Fatalf("expected status Created, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.Item{}
-			err = json.NewDecoder(resp.Body).Decode(item)
+			data := &itemResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+				t.Fatalf("expected a itemResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			if data.Item.Value != tc.input["value"] {
+				t.Fatalf("expected: %v, got: %v", tc.input["value"], data.Item.Value)
+			}
+			if data.Item.Type != tc.input["type"] {
+				t.Fatalf("expected: %v, got: %v", tc.input["type"], data.Item.Type)
+			}
+			if data.Item.Version != tc.input["version"] {
+				t.Fatalf("expected: %v, got: %v", tc.input["version"], data.Item.Version)
 			}
 		})
 	}
@@ -423,16 +447,18 @@ func TestDeleteItem(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			rows := make(map[string]interface{})
-			err = json.NewDecoder(resp.Body).Decode(&rows)
+			data := &deleteResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
 				t.Fatalf("expected a map[string]interface{}, got: %v", err)
 			}
 
-			deleted := rows["RowsAffected"]
+			if data.Error != nil {
+				t.Fatalf("expected non nil, got: %v", data.Error)
+			}
 
-			if deleted != 1.0 {
-				t.Fatalf("expected: 1, got: %v", rows["RowsAffected"])
+			if data.RowsAffected != 1 {
+				t.Fatalf("expected: 1, got: %v", data.RowsAffected)
 			}
 		})
 	}
@@ -449,7 +475,7 @@ func TestModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"get item 1":     {input: "1"},
+		"get module 1":   {input: "1"},
 		"missing input":  {input: " ", status: http.StatusNotFound, err: true},
 		"wrong input":    {input: "something bad", status: http.StatusNotFound, err: true},
 		"closed storage": {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
@@ -479,15 +505,19 @@ func TestModule(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.Item{}
-			if err := json.NewDecoder(resp.Body).Decode(item); err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+			data := &moduleResponse{}
+			if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
+				t.Fatalf("expected a moduleResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
 			}
 
 			i, _ := strconv.ParseInt(tc.input, 10, 64)
 
-			if item.ID != i {
-				t.Fatalf("expected: %v, got: %v", 1, item.ID)
+			if data.Module.ID != i {
+				t.Fatalf("expected: %v, got: %v", 1, data.Module.ID)
 			}
 		})
 	}
@@ -501,7 +531,7 @@ func TestModules(t *testing.T) {
 	tt := map[string]struct {
 		err bool
 	}{
-		"get items":      {err: false},
+		"get modules":    {err: false},
 		"closed storage": {err: true},
 	}
 
@@ -529,10 +559,18 @@ func TestModules(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			items := make([]*storage.Item, 0)
-			err = json.NewDecoder(resp.Body).Decode(&items)
+			data := &modulesResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected slice of storage.Item, got: %v", err)
+				t.Fatalf("expected modulesResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			if len(data.Modules) == 0 {
+				t.Fatal("expected non empty slice of storage.Module")
 			}
 		})
 	}
@@ -605,10 +643,21 @@ func TestCreateModule(t *testing.T) {
 				t.Fatalf("expected status Created, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.Item{}
-			err = json.NewDecoder(resp.Body).Decode(item)
+			data := &moduleResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+				t.Fatalf("expected a moduleResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			if data.Module.Value != tc.input["value"] {
+				t.Fatalf("expected: %v, got: %v", data.Module.Value, tc.input["value"])
+			}
+			if data.Module.Version != tc.input["version"] {
+				t.Fatalf("expected: %v, got: %v", data.Module.Version, tc.input["version"])
 			}
 		})
 	}
@@ -664,16 +713,18 @@ func TestDeleteModule(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			rows := make(map[string]interface{})
-			err = json.NewDecoder(resp.Body).Decode(&rows)
+			data := &deleteResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected a map[string]interface{}, got: %v", err)
+				t.Fatalf("expected deleteResponse, got: %v", err)
 			}
 
-			deleted := rows["RowsAffected"]
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
 
-			if deleted != 1.0 {
-				t.Fatalf("expected: 1, got: %v", rows["RowsAffected"])
+			if data.RowsAffected != 1 {
+				t.Fatalf("expected: 1, got: %v", data.RowsAffected)
 			}
 		})
 	}
@@ -690,10 +741,10 @@ func TestItemModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"get item 1":     {input: "1"},
-		"missing input":  {input: " ", status: http.StatusNotFound, err: true},
-		"wrong input":    {input: "something bad", status: http.StatusNotFound, err: true},
-		"closed storage": {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
+		"get item module 1": {input: "1"},
+		"missing input":     {input: " ", status: http.StatusNotFound, err: true},
+		"wrong input":       {input: "something bad", status: http.StatusNotFound, err: true},
+		"closed storage":    {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
 	}
 
 	for name, tc := range tt {
@@ -720,15 +771,19 @@ func TestItemModule(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.Item{}
-			if err := json.NewDecoder(resp.Body).Decode(item); err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+			data := &itemModuleResponse{}
+			if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
+				t.Fatalf("expected a itemModuleResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
 			}
 
 			i, _ := strconv.ParseInt(tc.input, 10, 64)
 
-			if item.ID != i {
-				t.Fatalf("expected: %v, got: %v", 1, item.ID)
+			if data.ItemModule.ID != i {
+				t.Fatalf("expected: %v, got: %v", 1, data.ItemModule.ID)
 			}
 		})
 	}
@@ -742,8 +797,8 @@ func TestItemModules(t *testing.T) {
 	tt := map[string]struct {
 		err bool
 	}{
-		"get items":      {err: false},
-		"closed storage": {err: true},
+		"get item modules": {err: false},
+		"closed storage":   {err: true},
 	}
 
 	for name, tc := range tt {
@@ -770,10 +825,18 @@ func TestItemModules(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			items := make([]*storage.Item, 0)
-			err = json.NewDecoder(resp.Body).Decode(&items)
+			data := &itemModulesResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected slice of storage.Item, got: %v", err)
+				t.Fatalf("expected itemModulesResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			if len(data.ItemModules) == 0 {
+				t.Fatalf("expected non empty slice of storage.ItemModule")
 			}
 		})
 	}
@@ -846,10 +909,25 @@ func TestCreateItemModule(t *testing.T) {
 				t.Fatalf("expected status Created, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.Item{}
-			err = json.NewDecoder(resp.Body).Decode(item)
+			data := &itemModuleResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+				t.Fatalf("expected a itemModuleResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			itemID, _ := tc.input["item_id"].(int)
+			moduleID, _ := tc.input["module_id"].(int)
+
+			if data.ItemModule.ItemID != int64(itemID) {
+				t.Fatalf("expected: %v, got: %v", itemID, data.ItemModule.ItemID)
+			}
+
+			if data.ItemModule.ModuleID != int64(moduleID) {
+				t.Fatalf("expected: %v, got: %v", moduleID, data.ItemModule.ModuleID)
 			}
 		})
 	}
@@ -866,7 +944,7 @@ func TestDeleteItemModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"Delete module 1": {input: "1"},
+		"Delete item module 1": {input: "1"},
 		"wrong input": {
 			input: "woop woop", status: http.StatusNotFound, err: true,
 		},
@@ -905,16 +983,14 @@ func TestDeleteItemModule(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			rows := make(map[string]interface{})
-			err = json.NewDecoder(resp.Body).Decode(&rows)
+			data := &deleteResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected a map[string]interface{}, got: %v", err)
+				t.Fatalf("expected a deleteRespone, got: %v", err)
 			}
 
-			deleted := rows["RowsAffected"]
-
-			if deleted != 1.0 {
-				t.Fatalf("expected: 1, got: %v", rows["RowsAffected"])
+			if data.RowsAffected != 1 {
+				t.Fatalf("expected: 1, got: %v", data.RowsAffected)
 			}
 		})
 	}
@@ -995,8 +1071,6 @@ func TestModuleDependencies(t *testing.T) {
 				url = fmt.Sprintf("%v/%v", srv.URL, tc.url)
 			}
 
-			t.Log(url)
-
 			resp, err := http.Get(url)
 			if err != nil {
 				t.Fatalf("could not send GET request: %v", err)
@@ -1014,10 +1088,24 @@ func TestModuleDependencies(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			moddeps := make([]*storage.ModuleDependency, 0)
-			err = json.NewDecoder(resp.Body).Decode(&moddeps)
+			data := moduleDependenciesResponse{}
+			err = json.NewDecoder(resp.Body).Decode(&data)
 			if err != nil {
-				t.Fatalf("expected slice of storage.Item, got: %v", err)
+				t.Fatalf("expected moduleDependenciesResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			for _, moddep := range data.ModuleDependencies {
+				if moddep != nil && moddep.Dependent != 1 {
+					t.Fatalf("expected dependent id of 1, got: %v", moddep.Dependent)
+				}
+
+				if moddep != nil && moddep.Dependee != 2 {
+					t.Fatalf("expected dependee id of 2, got: %v", moddep.Dependent)
+				}
 			}
 		})
 	}
@@ -1090,10 +1178,25 @@ func TestCreateModuleDependency(t *testing.T) {
 				t.Fatalf("expected status Created, got: %v", resp.StatusCode)
 			}
 
-			item := &storage.ModuleDependency{}
-			err = json.NewDecoder(resp.Body).Decode(item)
+			data := &moduleDependencyResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
-				t.Fatalf("expected a storage.Item, got: %v", err)
+				t.Fatalf("expected a moduleDepedencyResponse, got: %v", err)
+			}
+
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
+
+			i, _ := tc.input["dependent"].(int)
+			j, _ := tc.input["dependee"].(int)
+
+			if data.ModuleDependency.Dependent != int64(i) {
+				t.Fatalf("expected: %v, got: %v", i, data.ModuleDependency.Dependent)
+			}
+
+			if data.ModuleDependency.Dependee != int64(j) {
+				t.Fatalf("expected: %v, got: %v", j, data.ModuleDependency.Dependee)
 			}
 		})
 	}
@@ -1175,16 +1278,18 @@ func TestDeleteModuleDependency(t *testing.T) {
 				t.Fatalf("expected status OK, got: %v", resp.StatusCode)
 			}
 
-			rows := make(map[string]interface{})
-			err = json.NewDecoder(resp.Body).Decode(&rows)
+			data := &deleteResponse{}
+			err = json.NewDecoder(resp.Body).Decode(data)
 			if err != nil {
 				t.Fatalf("expected a map[string]interface{}, got: %v", err)
 			}
 
-			deleted := rows["RowsAffected"]
+			if data.Error != nil {
+				t.Fatalf("expected nil error, got: %v", data.Error)
+			}
 
-			if deleted != 1.0 {
-				t.Fatalf("expected: 1, got: %v", rows["RowsAffected"])
+			if data.RowsAffected != 1 {
+				t.Fatalf("expected: 1, got: %v", data.RowsAffected)
 			}
 		})
 	}
