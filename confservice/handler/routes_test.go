@@ -213,7 +213,7 @@ func TestItem(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"get item 1":     {input: "1"},
+		"item 1":         {input: "1"},
 		"missing input":  {input: " ", status: http.StatusNotFound, err: true},
 		"wrong input":    {input: "something bad", status: http.StatusNotFound, err: true},
 		"closed storage": {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
@@ -269,7 +269,7 @@ func TestItems(t *testing.T) {
 	tt := map[string]struct {
 		err bool
 	}{
-		"get items":      {err: false},
+		"items":          {err: false},
 		"closed storage": {err: true},
 	}
 
@@ -415,7 +415,7 @@ func TestDeleteItem(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"Delete item 1":  {input: "1"},
+		"item 1":         {input: "1"},
 		"wrong input":    {input: "woop woop", status: http.StatusNotFound, err: true},
 		"closed storage": {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
 	}
@@ -475,7 +475,7 @@ func TestModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"get module 1":   {input: "1"},
+		"module 1":       {input: "1"},
 		"missing input":  {input: " ", status: http.StatusNotFound, err: true},
 		"wrong input":    {input: "something bad", status: http.StatusNotFound, err: true},
 		"closed storage": {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
@@ -531,7 +531,7 @@ func TestModules(t *testing.T) {
 	tt := map[string]struct {
 		err bool
 	}{
-		"get modules":    {err: false},
+		"modules":        {err: false},
 		"closed storage": {err: true},
 	}
 
@@ -674,7 +674,7 @@ func TestDeleteModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"Delete module 1": {input: "1"},
+		"module 1": {input: "1"},
 		"wrong input": {
 			input: "woop woop", status: http.StatusNotFound, err: true,
 		},
@@ -741,10 +741,10 @@ func TestItemModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"get item module 1": {input: "1"},
-		"missing input":     {input: " ", status: http.StatusNotFound, err: true},
-		"wrong input":       {input: "something bad", status: http.StatusNotFound, err: true},
-		"closed storage":    {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
+		"item module 1":  {input: "1"},
+		"missing input":  {input: " ", status: http.StatusNotFound, err: true},
+		"wrong input":    {input: "something bad", status: http.StatusNotFound, err: true},
+		"closed storage": {input: "1", status: http.StatusInternalServerError, err: true, closed: true},
 	}
 
 	for name, tc := range tt {
@@ -797,8 +797,8 @@ func TestItemModules(t *testing.T) {
 	tt := map[string]struct {
 		err bool
 	}{
-		"get item modules": {err: false},
-		"closed storage":   {err: true},
+		"item modules":   {err: false},
+		"closed storage": {err: true},
 	}
 
 	for name, tc := range tt {
@@ -944,7 +944,7 @@ func TestDeleteItemModule(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"Delete item module 1": {input: "1"},
+		"item module 1": {input: "1"},
 		"wrong input": {
 			input: "woop woop", status: http.StatusNotFound, err: true,
 		},
@@ -1012,15 +1012,15 @@ func TestModuleDependencies(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"get module dependencies": {
+		"module dependencies": {
 			input: -1,
 			url:   moddepURL,
 		},
-		"get module dependencies by dependent id": {
+		"module dependencies dependent id": {
 			input: 1,
 			url:   dependentURL,
 		},
-		"get module dependencies by dependee id": {
+		"module dependencies dependee id": {
 			input: 2,
 			url:   dependeeURL,
 		},
@@ -1036,23 +1036,9 @@ func TestModuleDependencies(t *testing.T) {
 			status: http.StatusNotFound,
 			err:    true,
 		},
-		"closed storage module dependecies": {
+		"closed storage": {
 			input:  -1,
 			url:    moddepURL,
-			status: http.StatusInternalServerError,
-			err:    true,
-			closed: true,
-		},
-		"closed storage module dependecies by dependent": {
-			input:  0,
-			url:    dependentURL,
-			status: http.StatusInternalServerError,
-			err:    true,
-			closed: true,
-		},
-		"closed storage module dependencies by dependee": {
-			input:  0,
-			url:    dependeeURL,
 			status: http.StatusInternalServerError,
 			err:    true,
 			closed: true,
@@ -1214,15 +1200,15 @@ func TestDeleteModuleDependency(t *testing.T) {
 		err    bool
 		closed bool
 	}{
-		"Delete module dependency": {
+		"module dependency": {
 			input: map[string]interface{}{"dependent": 1, "dependee": 2},
 			url:   "moduledependencies/dependent/%v/dependee/%v",
 		},
-		"Delete module dependency with dependent id": {
+		"module dependency dependent id": {
 			input: map[string]interface{}{"id": 1},
 			url:   "moduledependencies/dependent/%v",
 		},
-		"Delete module dependency with dependee id": {
+		"module dependency dependee id": {
 			input: map[string]interface{}{"id": 2},
 			url:   "moduledependencies/dependee/%v",
 		},
@@ -1254,9 +1240,6 @@ func TestDeleteModuleDependency(t *testing.T) {
 			} else {
 				url = fmt.Sprintf(tc.url, tc.input["id"])
 			}
-
-			t.Log(name)
-			t.Log(url)
 
 			req, _ := http.NewRequest(
 				http.MethodDelete, fmt.Sprintf("%v/%v", srv.URL, url), nil,
